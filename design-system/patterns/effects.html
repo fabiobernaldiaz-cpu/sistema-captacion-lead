@@ -1,0 +1,297 @@
+<!-- @dsCard group="Patterns" -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReveciaNet — Efectos & Animaciones</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500&display=swap');
+  :root {
+    --bg:#000;--accent:#00D4FF;--text:#F0F0F5;--text2:#A0A0B0;--text3:#606070;
+    --glass:rgba(255,255,255,0.04);--border:rgba(255,255,255,0.08);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);padding:40px;overflow-x:hidden}
+  h1{font-size:28px;font-weight:700;margin-bottom:8px;background:linear-gradient(135deg,#00D4FF,#0066CC);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .subtitle{font-size:14px;color:var(--text2);margin-bottom:48px}
+  .section{margin-bottom:64px}
+  .section-title{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin-bottom:24px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+
+  /* === GLASSMORPHISM === */
+  .glass-demo{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;
+    position:relative;padding:40px 0;
+  }
+  .glass-bg-orb{
+    position:absolute;width:300px;height:300px;border-radius:50%;
+    background:linear-gradient(135deg,rgba(0,212,255,0.3),rgba(27,58,92,0.4));
+    filter:blur(60px);top:20%;left:30%;
+  }
+  .glass-card{
+    padding:32px;border-radius:16px;position:relative;z-index:1;
+  }
+  .glass-1{
+    background:rgba(255,255,255,0.03);
+    backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.06);
+  }
+  .glass-2{
+    background:rgba(255,255,255,0.06);
+    backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);
+  }
+  .glass-3{
+    background:rgba(0,212,255,0.05);
+    backdrop-filter:blur(24px);border:1px solid rgba(0,212,255,0.15);
+  }
+  .glass-label{font-size:16px;font-weight:600;margin-bottom:4px}
+  .glass-desc{font-size:12px;color:var(--text3);font-family:monospace}
+
+  /* === GLOW EFFECTS === */
+  .glow-grid{display:flex;flex-wrap:wrap;gap:32px;align-items:center}
+  .glow-item{text-align:center}
+  .glow-box{
+    width:120px;height:120px;border-radius:16px;margin:0 auto 12px;
+    display:flex;align-items:center;justify-content:center;
+    transition:all 0.4s ease;cursor:pointer;
+  }
+  .glow-subtle{
+    background:var(--glass);border:1px solid rgba(0,212,255,0.2);
+    box-shadow:0 0 15px rgba(0,212,255,0.1);
+  }
+  .glow-subtle:hover{box-shadow:0 0 30px rgba(0,212,255,0.25)}
+  .glow-medium{
+    background:var(--glass);border:1px solid rgba(0,212,255,0.3);
+    box-shadow:0 0 25px rgba(0,212,255,0.2),0 0 50px rgba(0,212,255,0.05);
+  }
+  .glow-medium:hover{box-shadow:0 0 40px rgba(0,212,255,0.35),0 0 80px rgba(0,212,255,0.1)}
+  .glow-intense{
+    background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.4);
+    box-shadow:0 0 40px rgba(0,212,255,0.3),0 0 80px rgba(0,212,255,0.1),inset 0 0 30px rgba(0,212,255,0.05);
+  }
+  .glow-intense:hover{box-shadow:0 0 60px rgba(0,212,255,0.5),0 0 120px rgba(0,212,255,0.15),inset 0 0 40px rgba(0,212,255,0.08)}
+  .glow-label{font-size:12px;color:var(--text3)}
+
+  /* === CURSOR FOLLOW EFFECT === */
+  .cursor-demo{
+    height:300px;border-radius:20px;
+    background:var(--glass);border:1px solid var(--border);
+    position:relative;overflow:hidden;cursor:none;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .cursor-glow{
+    position:absolute;width:200px;height:200px;border-radius:50%;
+    background:radial-gradient(circle,rgba(0,212,255,0.15),transparent 70%);
+    pointer-events:none;transform:translate(-50%,-50%);
+    transition:left 0.1s ease,top 0.1s ease;
+  }
+  .cursor-dot{
+    position:absolute;width:12px;height:12px;border-radius:50%;
+    background:var(--accent);pointer-events:none;
+    transform:translate(-50%,-50%);
+    box-shadow:0 0 15px var(--accent);
+    transition:left 0.05s ease,top 0.05s ease;
+  }
+  .cursor-demo-text{
+    font-size:16px;color:var(--text3);position:relative;z-index:1;
+    font-family:'Inter',sans-serif;
+  }
+
+  /* === TEXT ANIMATIONS === */
+  .text-gradient{
+    font-size:36px;font-weight:700;
+    background:linear-gradient(135deg,#00D4FF,#0066CC,#00D4FF);
+    background-size:200% auto;
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+    animation:shimmer 3s linear infinite;
+    margin-bottom:16px;
+  }
+  @keyframes shimmer{to{background-position:200% center}}
+
+  .text-typewriter{
+    font-size:24px;font-weight:600;
+    border-right:2px solid var(--accent);
+    overflow:hidden;white-space:nowrap;
+    animation:typing 3s steps(30) infinite,blink 0.7s step-end infinite;
+    max-width:fit-content;
+  }
+  @keyframes typing{0%{width:0}50%{width:100%}50.1%{width:100%}100%{width:0}}
+  @keyframes blink{50%{border-color:transparent}}
+
+  .text-reveal{
+    font-size:28px;font-weight:600;
+    animation:reveal 2s ease-out infinite;
+  }
+  @keyframes reveal{
+    0%{opacity:0;transform:translateY(20px);filter:blur(10px)}
+    30%{opacity:1;transform:translateY(0);filter:blur(0)}
+    70%{opacity:1;transform:translateY(0);filter:blur(0)}
+    100%{opacity:0;transform:translateY(-20px);filter:blur(10px)}
+  }
+
+  /* === HOVER CARD TILT === */
+  .tilt-card{
+    width:300px;height:200px;border-radius:20px;
+    background:var(--glass);border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;
+    transition:transform 0.3s ease,box-shadow 0.3s ease;
+    cursor:pointer;position:relative;overflow:hidden;
+  }
+  .tilt-card:hover{
+    box-shadow:0 20px 60px rgba(0,0,0,0.4),0 0 40px rgba(0,212,255,0.1);
+  }
+  .tilt-card::after{
+    content:'';position:absolute;inset:0;
+    background:radial-gradient(circle at var(--x,50%) var(--y,50%),rgba(0,212,255,0.08),transparent 60%);
+    pointer-events:none;
+  }
+  .tilt-text{font-size:16px;color:var(--text2);z-index:1;font-family:'Inter',sans-serif}
+
+  /* === BORDER ANIMATION === */
+  .border-anim{
+    width:300px;height:100px;border-radius:16px;
+    position:relative;display:flex;align-items:center;justify-content:center;
+    background:var(--bg);overflow:hidden;
+  }
+  .border-anim::before{
+    content:'';position:absolute;inset:-2px;border-radius:18px;
+    background:conic-gradient(from 0deg,transparent,var(--accent),transparent 30%);
+    animation:rotate 3s linear infinite;
+  }
+  .border-anim::after{
+    content:'';position:absolute;inset:1px;border-radius:15px;
+    background:var(--bg);
+  }
+  @keyframes rotate{to{transform:rotate(360deg)}}
+  .border-anim span{position:relative;z-index:1;font-size:14px;color:var(--text2)}
+
+  /* === LOADING === */
+  .loaders{display:flex;gap:48px;align-items:center;flex-wrap:wrap}
+  .loader-dots{display:flex;gap:6px}
+  .loader-dots span{
+    width:8px;height:8px;border-radius:50%;background:var(--accent);
+    animation:dotPulse 1.2s ease-in-out infinite;
+  }
+  .loader-dots span:nth-child(2){animation-delay:0.15s}
+  .loader-dots span:nth-child(3){animation-delay:0.3s}
+  @keyframes dotPulse{0%,100%{opacity:0.3;transform:scale(0.8)}50%{opacity:1;transform:scale(1.2)}}
+
+  .loader-ring{
+    width:32px;height:32px;border-radius:50%;
+    border:2px solid rgba(0,212,255,0.2);
+    border-top:2px solid var(--accent);
+    animation:spin 0.8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .loader-bar{
+    width:200px;height:4px;border-radius:2px;
+    background:rgba(0,212,255,0.15);overflow:hidden;
+  }
+  .loader-bar::after{
+    content:'';display:block;width:40%;height:100%;border-radius:2px;
+    background:linear-gradient(90deg,var(--accent),#0066CC);
+    animation:barSlide 1.5s ease-in-out infinite;
+    box-shadow:0 0 10px rgba(0,212,255,0.4);
+  }
+  @keyframes barSlide{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}
+
+  .loader-pulse{
+    width:32px;height:32px;border-radius:50%;
+    background:var(--accent);
+    animation:pulseGlow 1.5s ease-in-out infinite;
+  }
+  @keyframes pulseGlow{
+    0%{transform:scale(0.8);opacity:1;box-shadow:0 0 0 0 rgba(0,212,255,0.5)}
+    100%{transform:scale(1);opacity:0.6;box-shadow:0 0 0 20px rgba(0,212,255,0)}
+  }
+</style>
+</head>
+<body>
+  <h1>Efectos & Animaciones</h1>
+  <p class="subtitle">ReveciaNet Design System — Glassmorphism, glows, cursores y micro-interacciones</p>
+
+  <div class="section">
+    <div class="section-title">Glassmorphism — 3 niveles</div>
+    <div class="glass-demo">
+      <div class="glass-bg-orb"></div>
+      <div class="glass-card glass-1"><div class="glass-label">Glass Light</div><div class="glass-desc">blur(12px) · white 3% · border 6%</div></div>
+      <div class="glass-card glass-2"><div class="glass-label">Glass Medium</div><div class="glass-desc">blur(20px) · white 6% · border 10%</div></div>
+      <div class="glass-card glass-3"><div class="glass-label">Glass Accent</div><div class="glass-desc">blur(24px) · cyan 5% · border cyan 15%</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Glow Levels (hover para intensificar)</div>
+    <div class="glow-grid">
+      <div class="glow-item"><div class="glow-box glow-subtle"><svg width="28" height="28" fill="none" stroke="#00D4FF" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/></svg></div><div class="glow-label">Sutil</div></div>
+      <div class="glow-item"><div class="glow-box glow-medium"><svg width="28" height="28" fill="none" stroke="#00D4FF" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/></svg></div><div class="glow-label">Medio</div></div>
+      <div class="glow-item"><div class="glow-box glow-intense"><svg width="28" height="28" fill="none" stroke="#00D4FF" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/></svg></div><div class="glow-label">Intenso</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Cursor Follow Effect (mueve el ratón)</div>
+    <div class="cursor-demo" id="cursorDemo">
+      <div class="cursor-glow" id="cursorGlow"></div>
+      <div class="cursor-dot" id="cursorDot"></div>
+      <span class="cursor-demo-text">Mueve el ratón por esta zona</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Animaciones de Texto</div>
+    <div class="text-gradient">Inteligencia que transforma</div>
+    <div class="text-typewriter">Automatización con IA</div>
+    <br><br>
+    <div class="text-reveal">ReveciaNet</div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Card Tilt + Spotlight (mueve el ratón)</div>
+    <div class="tilt-card" id="tiltCard">
+      <span class="tilt-text">Hover & move</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Animated Border</div>
+    <div class="border-anim"><span>Rotating gradient border</span></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Loading States</div>
+    <div class="loaders">
+      <div><div class="loader-dots"><span></span><span></span><span></span></div><br><span style="font-size:11px;color:#606070">Dots</span></div>
+      <div><div class="loader-ring"></div><br><span style="font-size:11px;color:#606070">Ring</span></div>
+      <div><div class="loader-bar"></div><br><span style="font-size:11px;color:#606070">Bar</span></div>
+      <div><div class="loader-pulse"></div><br><span style="font-size:11px;color:#606070">Pulse</span></div>
+    </div>
+  </div>
+
+  <script>
+    const demo = document.getElementById('cursorDemo');
+    const glow = document.getElementById('cursorGlow');
+    const dot = document.getElementById('cursorDot');
+    demo.addEventListener('mousemove', e => {
+      const r = demo.getBoundingClientRect();
+      glow.style.left = (e.clientX - r.left) + 'px';
+      glow.style.top = (e.clientY - r.top) + 'px';
+      dot.style.left = (e.clientX - r.left) + 'px';
+      dot.style.top = (e.clientY - r.top) + 'px';
+    });
+
+    const tilt = document.getElementById('tiltCard');
+    tilt.addEventListener('mousemove', e => {
+      const r = tilt.getBoundingClientRect();
+      const x = ((e.clientX - r.left) / r.width) * 100;
+      const y = ((e.clientY - r.top) / r.height) * 100;
+      const rotY = ((x - 50) / 50) * 10;
+      const rotX = ((50 - y) / 50) * 10;
+      tilt.style.transform = `perspective(600px) rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+      tilt.style.setProperty('--x', x + '%');
+      tilt.style.setProperty('--y', y + '%');
+    });
+    tilt.addEventListener('mouseleave', () => { tilt.style.transform = 'perspective(600px) rotateX(0) rotateY(0)'; });
+  </script>
+</body>
+</html>

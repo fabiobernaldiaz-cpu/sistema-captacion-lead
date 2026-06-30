@@ -1,0 +1,250 @@
+<!-- @dsCard group="Tokens" -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReveciaNet — Paleta de Colores</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    /* === FONDOS === */
+    --bg-primary: #000000;
+    --bg-secondary: #050508;
+    --bg-tertiary: #0A0A0F;
+    --bg-elevated: #111118;
+    --bg-surface: #16161F;
+
+    /* === ACENTO PRINCIPAL — Cian Brillante === */
+    --accent-primary: #00D4FF;
+    --accent-hover: #33DDFF;
+    --accent-muted: #00A3CC;
+    --accent-subtle: rgba(0, 212, 255, 0.12);
+    --accent-glow: rgba(0, 212, 255, 0.35);
+
+    /* === AZUL LOGO (Navy) === */
+    --logo-blue: #1B3A5C;
+    --logo-blue-light: #2A5580;
+
+    /* === TEXTO === */
+    --text-primary: #F0F0F5;
+    --text-secondary: #A0A0B0;
+    --text-tertiary: #606070;
+    --text-inverse: #000000;
+
+    /* === GLASS / SUPERFICIES === */
+    --glass-bg: rgba(255, 255, 255, 0.04);
+    --glass-bg-hover: rgba(255, 255, 255, 0.07);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-border-hover: rgba(0, 212, 255, 0.25);
+
+    /* === ESTADOS === */
+    --success: #00E68A;
+    --warning: #FFB800;
+    --error: #FF4D6A;
+    --info: #00D4FF;
+
+    /* === GRADIENTES === */
+    --gradient-accent: linear-gradient(135deg, #00D4FF 0%, #0066CC 100%);
+    --gradient-surface: linear-gradient(180deg, rgba(0,212,255,0.06) 0%, transparent 100%);
+    --gradient-glow: radial-gradient(circle, rgba(0,212,255,0.15) 0%, transparent 70%);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Space Grotesk', sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 40px;
+    min-height: 100vh;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    background: var(--gradient-accent);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 40px;
+  }
+
+  .section {
+    margin-bottom: 36px;
+  }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-tertiary);
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--glass-border);
+  }
+
+  .swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .swatch {
+    width: 140px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    transition: all 0.3s ease;
+  }
+
+  .swatch:hover {
+    border-color: var(--glass-border-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+
+  .swatch-color {
+    height: 72px;
+    position: relative;
+  }
+
+  .swatch-color.bordered {
+    border: 1px dashed rgba(255,255,255,0.15);
+    border-radius: 11px 11px 0 0;
+  }
+
+  .swatch-info {
+    padding: 10px 12px;
+  }
+
+  .swatch-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+  }
+
+  .swatch-value {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .gradient-preview {
+    height: 72px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    border: 1px solid var(--glass-border);
+  }
+
+  .gradient-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+  }
+
+  .gradient-code {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    font-family: monospace;
+    word-break: break-all;
+  }
+
+  .gradient-item {
+    margin-bottom: 20px;
+    max-width: 300px;
+  }
+</style>
+</head>
+<body>
+  <h1>Paleta de Colores</h1>
+  <p class="subtitle">ReveciaNet Design System — Tokens de color</p>
+
+  <div class="section">
+    <div class="section-title">Fondos</div>
+    <div class="swatches">
+      <div class="swatch"><div class="swatch-color bordered" style="background:#000000"></div><div class="swatch-info"><div class="swatch-name">Primary</div><div class="swatch-value">#000000</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#050508"></div><div class="swatch-info"><div class="swatch-name">Secondary</div><div class="swatch-value">#050508</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#0A0A0F"></div><div class="swatch-info"><div class="swatch-name">Tertiary</div><div class="swatch-value">#0A0A0F</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#111118"></div><div class="swatch-info"><div class="swatch-name">Elevated</div><div class="swatch-value">#111118</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#16161F"></div><div class="swatch-info"><div class="swatch-name">Surface</div><div class="swatch-value">#16161F</div></div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Acento — Cian Brillante</div>
+    <div class="swatches">
+      <div class="swatch"><div class="swatch-color" style="background:#00D4FF"></div><div class="swatch-info"><div class="swatch-name">Primary</div><div class="swatch-value">#00D4FF</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#33DDFF"></div><div class="swatch-info"><div class="swatch-name">Hover</div><div class="swatch-value">#33DDFF</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#00A3CC"></div><div class="swatch-info"><div class="swatch-name">Muted</div><div class="swatch-value">#00A3CC</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:rgba(0,212,255,0.12)"></div><div class="swatch-info"><div class="swatch-name">Subtle</div><div class="swatch-value">alpha 12%</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:rgba(0,212,255,0.35);box-shadow:0 0 30px rgba(0,212,255,0.4)"></div><div class="swatch-info"><div class="swatch-name">Glow</div><div class="swatch-value">alpha 35%</div></div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Logo — Navy Blue</div>
+    <div class="swatches">
+      <div class="swatch"><div class="swatch-color" style="background:#1B3A5C"></div><div class="swatch-info"><div class="swatch-name">Logo Blue</div><div class="swatch-value">#1B3A5C</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#2A5580"></div><div class="swatch-info"><div class="swatch-name">Logo Light</div><div class="swatch-value">#2A5580</div></div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Texto</div>
+    <div class="swatches">
+      <div class="swatch"><div class="swatch-color" style="background:#F0F0F5"></div><div class="swatch-info"><div class="swatch-name">Primary</div><div class="swatch-value">#F0F0F5</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#A0A0B0"></div><div class="swatch-info"><div class="swatch-name">Secondary</div><div class="swatch-value">#A0A0B0</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#606070"></div><div class="swatch-info"><div class="swatch-name">Tertiary</div><div class="swatch-value">#606070</div></div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Estados</div>
+    <div class="swatches">
+      <div class="swatch"><div class="swatch-color" style="background:#00E68A"></div><div class="swatch-info"><div class="swatch-name">Success</div><div class="swatch-value">#00E68A</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#FFB800"></div><div class="swatch-info"><div class="swatch-name">Warning</div><div class="swatch-value">#FFB800</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#FF4D6A"></div><div class="swatch-info"><div class="swatch-name">Error</div><div class="swatch-value">#FF4D6A</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#00D4FF"></div><div class="swatch-info"><div class="swatch-name">Info</div><div class="swatch-value">#00D4FF</div></div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Glass / Superficies</div>
+    <div class="swatches">
+      <div class="swatch"><div class="swatch-color" style="background:rgba(255,255,255,0.04);backdrop-filter:blur(20px)"></div><div class="swatch-info"><div class="swatch-name">Glass BG</div><div class="swatch-value">white 4%</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:rgba(255,255,255,0.07);backdrop-filter:blur(20px)"></div><div class="swatch-info"><div class="swatch-name">Glass Hover</div><div class="swatch-value">white 7%</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="border:1px solid rgba(255,255,255,0.08)"></div><div class="swatch-info"><div class="swatch-name">Glass Border</div><div class="swatch-value">white 8%</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="border:1px solid rgba(0,212,255,0.25)"></div><div class="swatch-info"><div class="swatch-name">Glow Border</div><div class="swatch-value">cyan 25%</div></div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Gradientes</div>
+    <div class="gradient-item">
+      <div class="gradient-preview" style="background:linear-gradient(135deg, #00D4FF 0%, #0066CC 100%)"></div>
+      <div class="gradient-label">Accent Gradient</div>
+      <div class="gradient-code">linear-gradient(135deg, #00D4FF, #0066CC)</div>
+    </div>
+    <div class="gradient-item">
+      <div class="gradient-preview" style="background:linear-gradient(180deg, rgba(0,212,255,0.06) 0%, transparent 100%)"></div>
+      <div class="gradient-label">Surface Gradient</div>
+      <div class="gradient-code">linear-gradient(180deg, cyan 6%, transparent)</div>
+    </div>
+    <div class="gradient-item">
+      <div class="gradient-preview" style="background:radial-gradient(circle, rgba(0,212,255,0.15) 0%, transparent 70%)"></div>
+      <div class="gradient-label">Glow Gradient</div>
+      <div class="gradient-code">radial-gradient(circle, cyan 15%, transparent)</div>
+    </div>
+  </div>
+</body>
+</html>

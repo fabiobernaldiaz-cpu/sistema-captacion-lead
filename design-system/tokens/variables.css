@@ -1,0 +1,143 @@
+/*
+ * ReveciaNet Design System — CSS Custom Properties
+ * Importar en cualquier proyecto: @import url('./variables.css');
+ */
+
+:root {
+  /* ═══════════════════════════════════════
+     COLORES — FONDOS
+     ═══════════════════════════════════════ */
+  --rn-bg-primary: #000000;
+  --rn-bg-secondary: #050508;
+  --rn-bg-tertiary: #0A0A0F;
+  --rn-bg-elevated: #111118;
+  --rn-bg-surface: #16161F;
+
+  /* ═══════════════════════════════════════
+     COLORES — ACENTO (Cian Brillante)
+     ═══════════════════════════════════════ */
+  --rn-accent: #00D4FF;
+  --rn-accent-hover: #33DDFF;
+  --rn-accent-muted: #00A3CC;
+  --rn-accent-subtle: rgba(0, 212, 255, 0.12);
+  --rn-accent-glow: rgba(0, 212, 255, 0.35);
+
+  /* ═══════════════════════════════════════
+     COLORES — LOGO (Navy)
+     ═══════════════════════════════════════ */
+  --rn-logo-blue: #1B3A5C;
+  --rn-logo-blue-light: #2A5580;
+
+  /* ═══════════════════════════════════════
+     COLORES — TEXTO
+     ═══════════════════════════════════════ */
+  --rn-text-primary: #F0F0F5;
+  --rn-text-secondary: #A0A0B0;
+  --rn-text-tertiary: #606070;
+  --rn-text-inverse: #000000;
+
+  /* ═══════════════════════════════════════
+     COLORES — ESTADOS
+     ═══════════════════════════════════════ */
+  --rn-success: #00E68A;
+  --rn-warning: #FFB800;
+  --rn-error: #FF4D6A;
+  --rn-info: #00D4FF;
+
+  /* ═══════════════════════════════════════
+     GLASS / SUPERFICIES
+     ═══════════════════════════════════════ */
+  --rn-glass-bg: rgba(255, 255, 255, 0.04);
+  --rn-glass-bg-hover: rgba(255, 255, 255, 0.07);
+  --rn-glass-border: rgba(255, 255, 255, 0.08);
+  --rn-glass-border-hover: rgba(0, 212, 255, 0.25);
+  --rn-glass-blur: blur(20px);
+
+  /* ═══════════════════════════════════════
+     GRADIENTES
+     ═══════════════════════════════════════ */
+  --rn-gradient-accent: linear-gradient(135deg, #00D4FF 0%, #0066CC 100%);
+  --rn-gradient-surface: linear-gradient(180deg, rgba(0, 212, 255, 0.06) 0%, transparent 100%);
+  --rn-gradient-glow: radial-gradient(circle, rgba(0, 212, 255, 0.15) 0%, transparent 70%);
+  --rn-gradient-logo: linear-gradient(135deg, #1B3A5C 0%, #F0F0F5 100%);
+
+  /* ═══════════════════════════════════════
+     TIPOGRAFÍA
+     ═══════════════════════════════════════ */
+  --rn-font-display: 'Space Grotesk', -apple-system, sans-serif;
+  --rn-font-body: 'Inter', -apple-system, sans-serif;
+  --rn-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Escala */
+  --rn-text-display: 64px;
+  --rn-text-h1: 48px;
+  --rn-text-h2: 36px;
+  --rn-text-h3: 28px;
+  --rn-text-h4: 22px;
+  --rn-text-h5: 18px;
+  --rn-text-body-lg: 18px;
+  --rn-text-body: 16px;
+  --rn-text-body-sm: 14px;
+  --rn-text-caption: 12px;
+  --rn-text-micro: 10px;
+
+  /* ═══════════════════════════════════════
+     ESPACIADO
+     ═══════════════════════════════════════ */
+  --rn-space-1: 4px;
+  --rn-space-2: 8px;
+  --rn-space-3: 12px;
+  --rn-space-4: 16px;
+  --rn-space-5: 24px;
+  --rn-space-6: 32px;
+  --rn-space-7: 48px;
+  --rn-space-8: 64px;
+  --rn-space-9: 96px;
+  --rn-space-10: 128px;
+
+  /* ═══════════════════════════════════════
+     BORDER RADIUS
+     ═══════════════════════════════════════ */
+  --rn-radius-sm: 4px;
+  --rn-radius-md: 8px;
+  --rn-radius-lg: 12px;
+  --rn-radius-xl: 16px;
+  --rn-radius-2xl: 24px;
+  --rn-radius-full: 50px;
+
+  /* ═══════════════════════════════════════
+     SOMBRAS & GLOWS
+     ═══════════════════════════════════════ */
+  --rn-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --rn-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --rn-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.6);
+
+  --rn-glow-sm: 0 0 20px rgba(0, 212, 255, 0.25);
+  --rn-glow-md: 0 0 40px rgba(0, 212, 255, 0.3);
+  --rn-glow-lg: 0 0 40px rgba(0, 212, 255, 0.3), 0 0 80px rgba(0, 212, 255, 0.1);
+
+  --rn-shadow-elevated-glow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 30px rgba(0, 212, 255, 0.2);
+
+  /* ═══════════════════════════════════════
+     TRANSICIONES
+     ═══════════════════════════════════════ */
+  --rn-ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --rn-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --rn-ease-smooth: cubic-bezier(0.25, 0.1, 0.25, 1);
+
+  --rn-duration-fast: 150ms;
+  --rn-duration-normal: 300ms;
+  --rn-duration-slow: 500ms;
+
+  /* ═══════════════════════════════════════
+     Z-INDEX
+     ═══════════════════════════════════════ */
+  --rn-z-base: 0;
+  --rn-z-elevated: 10;
+  --rn-z-dropdown: 50;
+  --rn-z-sticky: 80;
+  --rn-z-header: 100;
+  --rn-z-overlay: 200;
+  --rn-z-modal: 300;
+  --rn-z-toast: 400;
+}

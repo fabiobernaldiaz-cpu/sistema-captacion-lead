@@ -1,0 +1,270 @@
+<!-- @dsCard group="Tokens" -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReveciaNet — Tipografía</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg-primary: #000000;
+    --text-primary: #F0F0F5;
+    --text-secondary: #A0A0B0;
+    --text-tertiary: #606070;
+    --accent: #00D4FF;
+    --glass-bg: rgba(255,255,255,0.04);
+    --glass-border: rgba(255,255,255,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Space Grotesk', sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 40px;
+    min-height: 100vh;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, #00D4FF, #0066CC);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .subtitle { font-size: 14px; color: var(--text-secondary); margin-bottom: 48px; }
+
+  .section { margin-bottom: 48px; }
+  .section-title {
+    font-size: 13px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 2px; color: var(--text-tertiary); margin-bottom: 24px;
+    padding-bottom: 8px; border-bottom: 1px solid var(--glass-border);
+  }
+
+  .font-showcase {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 16px;
+  }
+
+  .font-label {
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .font-sample-large {
+    font-size: 48px;
+    line-height: 1.1;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+  }
+
+  .font-meta {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .scale-item {
+    display: flex;
+    align-items: baseline;
+    gap: 24px;
+    padding: 16px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .scale-item:last-child { border-bottom: none; }
+
+  .scale-meta {
+    min-width: 180px;
+    font-size: 12px;
+    color: var(--text-tertiary);
+    font-family: 'JetBrains Mono', monospace;
+    flex-shrink: 0;
+  }
+
+  .scale-preview {
+    color: var(--text-primary);
+    line-height: 1.2;
+  }
+
+  .weight-row {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+
+  .weight-item {
+    min-width: 160px;
+  }
+
+  .weight-sample {
+    font-size: 24px;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+
+  .weight-label {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .usage-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  .usage-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 24px;
+  }
+
+  .usage-title {
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .usage-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+  <h1>Tipografía</h1>
+  <p class="subtitle">ReveciaNet Design System — Escala tipográfica y fuentes</p>
+
+  <!-- FUENTES -->
+  <div class="section">
+    <div class="section-title">Fuentes</div>
+
+    <div class="font-showcase">
+      <div class="font-label">Display & Headings</div>
+      <div class="font-sample-large" style="font-family:'Space Grotesk',sans-serif;font-weight:700">Space Grotesk</div>
+      <div class="font-meta">font-family: 'Space Grotesk', sans-serif</div>
+    </div>
+
+    <div class="font-showcase">
+      <div class="font-label">Body & UI</div>
+      <div class="font-sample-large" style="font-family:'Inter',sans-serif;font-weight:400">Inter</div>
+      <div class="font-meta">font-family: 'Inter', sans-serif</div>
+    </div>
+
+    <div class="font-showcase">
+      <div class="font-label">Código & Datos</div>
+      <div class="font-sample-large" style="font-family:'JetBrains Mono',monospace;font-weight:400">JetBrains Mono</div>
+      <div class="font-meta">font-family: 'JetBrains Mono', monospace</div>
+    </div>
+  </div>
+
+  <!-- ESCALA -->
+  <div class="section">
+    <div class="section-title">Escala Tipográfica</div>
+
+    <div class="scale-item">
+      <div class="scale-meta">Display — 64px / 700<br>letter-spacing: -0.02em</div>
+      <div class="scale-preview" style="font-family:'Space Grotesk';font-size:64px;font-weight:700;letter-spacing:-0.02em">ReveciaNet</div>
+    </div>
+
+    <div class="scale-item">
+      <div class="scale-meta">H1 — 48px / 700<br>letter-spacing: -0.02em</div>
+      <div class="scale-preview" style="font-family:'Space Grotesk';font-size:48px;font-weight:700;letter-spacing:-0.02em">Inteligencia que transforma</div>
+    </div>
+
+    <div class="scale-item">
+      <div class="scale-meta">H2 — 36px / 600<br>letter-spacing: -0.01em</div>
+      <div class="scale-preview" style="font-family:'Space Grotesk';font-size:36px;font-weight:600;letter-spacing:-0.01em">Automatización con IA</div>
+    </div>
+
+    <div class="scale-item">
+      <div class="scale-meta">H3 — 28px / 600<br>letter-spacing: -0.01em</div>
+      <div class="scale-preview" style="font-family:'Space Grotesk';font-size:28px;font-weight:600;letter-spacing:-0.01em">Soluciones inteligentes</div>
+    </div>
+
+    <div class="scale-item">
+      <div class="scale-meta">H4 — 22px / 600</div>
+      <div class="scale-preview" style="font-family:'Space Grotesk';font-size:22px;font-weight:600">Sistemas de auditoría</div>
+    </div>
+
+    <div class="scale-item">
+      <div class="scale-meta">H5 — 18px / 600</div>
+      <div class="scale-preview" style="font-family:'Space Grotesk';font-size:18px;font-weight:600">Marketing digital</div>
+    </div>
+
+    <div class="scale-item">
+      <div class="scale-meta">Body L — 18px / 400<br>line-height: 1.7</div>
+      <div class="scale-preview" style="font-family:'Inter';font-size:18px;font-weight:400;line-height:1.7">Transformamos empresas con soluciones de inteligencia artificial que optimizan procesos y generan resultados medibles.</div>
+    </div>
+
+    <div class="scale-item">
+      <div class="scale-meta">Body — 16px / 400<br>line-height: 1.7</div>
+      <div class="scale-preview" style="font-family:'Inter';font-size:16px;font-weight:400;line-height:1.7;color:#A0A0B0">Implementamos sistemas automatizados que reducen costes operativos hasta un 60% mediante inteligencia artificial aplicada.</div>
+    </div>
+
+    <div class="scale-item">
+      <div class="scale-meta">Body S — 14px / 400<br>line-height: 1.6</div>
+      <div class="scale-preview" style="font-family:'Inter';font-size:14px;font-weight:400;line-height:1.6;color:#A0A0B0">Resultados garantizados con métricas en tiempo real.</div>
+    </div>
+
+    <div class="scale-item">
+      <div class="scale-meta">Caption — 12px / 500<br>letter-spacing: 0.02em</div>
+      <div class="scale-preview" style="font-family:'Inter';font-size:12px;font-weight:500;letter-spacing:0.02em;color:#606070">AUTOMATIZACIÓN · IA · MARKETING</div>
+    </div>
+
+    <div class="scale-item">
+      <div class="scale-meta">Code — 14px / 400</div>
+      <div class="scale-preview" style="font-family:'JetBrains Mono';font-size:14px;font-weight:400;color:#00D4FF">const ai = new ReveciaNet({ mode: 'smart' })</div>
+    </div>
+  </div>
+
+  <!-- PESOS -->
+  <div class="section">
+    <div class="section-title">Pesos — Space Grotesk</div>
+    <div class="weight-row">
+      <div class="weight-item"><div class="weight-sample" style="font-family:'Space Grotesk';font-weight:300">Light</div><div class="weight-label">300 — Light</div></div>
+      <div class="weight-item"><div class="weight-sample" style="font-family:'Space Grotesk';font-weight:400">Regular</div><div class="weight-label">400 — Regular</div></div>
+      <div class="weight-item"><div class="weight-sample" style="font-family:'Space Grotesk';font-weight:500">Medium</div><div class="weight-label">500 — Medium</div></div>
+      <div class="weight-item"><div class="weight-sample" style="font-family:'Space Grotesk';font-weight:600">SemiBold</div><div class="weight-label">600 — SemiBold</div></div>
+      <div class="weight-item"><div class="weight-sample" style="font-family:'Space Grotesk';font-weight:700">Bold</div><div class="weight-label">700 — Bold</div></div>
+    </div>
+  </div>
+
+  <!-- USO -->
+  <div class="section">
+    <div class="section-title">Guía de uso</div>
+    <div class="usage-grid">
+      <div class="usage-card">
+        <div class="usage-title">Space Grotesk</div>
+        <div class="usage-desc">Todos los títulos, display text, headings, CTAs principales y elementos de navegación. Geométrica, moderna y con carácter tech.</div>
+      </div>
+      <div class="usage-card">
+        <div class="usage-title">Inter</div>
+        <div class="usage-desc">Cuerpo de texto, párrafos, descripciones, labels de formulario, UI elements y texto de lectura prolongada. Máxima legibilidad.</div>
+      </div>
+      <div class="usage-card">
+        <div class="usage-title">JetBrains Mono</div>
+        <div class="usage-desc">Datos numéricos, código, métricas, KPIs, etiquetas técnicas y elementos que refuerzan la identidad tech.</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

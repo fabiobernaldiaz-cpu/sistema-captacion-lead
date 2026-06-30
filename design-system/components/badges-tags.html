@@ -1,0 +1,196 @@
+<!-- @dsCard group="Components" -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReveciaNet — Badges & Tags</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400&display=swap');
+  :root {
+    --bg:#000;--accent:#00D4FF;--text:#F0F0F5;--text2:#A0A0B0;--text3:#606070;
+    --glass:rgba(255,255,255,0.04);--border:rgba(255,255,255,0.08);
+    --success:#00E68A;--warning:#FFB800;--error:#FF4D6A;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);padding:40px}
+  h1{font-size:28px;font-weight:700;margin-bottom:8px;background:linear-gradient(135deg,#00D4FF,#0066CC);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .subtitle{font-size:14px;color:var(--text2);margin-bottom:48px}
+  .section{margin-bottom:48px}
+  .section-title{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin-bottom:24px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+  .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:16px}
+
+  /* === BADGES === */
+  .badge{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:6px 14px;border-radius:50px;
+    font-size:12px;font-weight:600;letter-spacing:0.3px;
+    font-family:'Inter',sans-serif;
+    transition:all 0.3s ease;
+  }
+  .badge:hover{transform:translateY(-1px)}
+
+  .badge-accent{background:rgba(0,212,255,0.12);color:var(--accent);border:1px solid rgba(0,212,255,0.2)}
+  .badge-success{background:rgba(0,230,138,0.12);color:var(--success);border:1px solid rgba(0,230,138,0.2)}
+  .badge-warning{background:rgba(255,184,0,0.12);color:var(--warning);border:1px solid rgba(255,184,0,0.2)}
+  .badge-error{background:rgba(255,77,106,0.12);color:var(--error);border:1px solid rgba(255,77,106,0.2)}
+  .badge-neutral{background:var(--glass);color:var(--text2);border:1px solid var(--border)}
+
+  .badge-solid-accent{background:var(--accent);color:#000;border:none;box-shadow:0 0 12px rgba(0,212,255,0.3)}
+  .badge-solid-success{background:var(--success);color:#000;border:none}
+  .badge-solid-error{background:var(--error);color:#fff;border:none}
+
+  /* Badge con glow */
+  .badge-glow{
+    background:rgba(0,212,255,0.08);color:var(--accent);
+    border:1px solid rgba(0,212,255,0.3);
+    box-shadow:0 0 15px rgba(0,212,255,0.15);
+  }
+  .badge-glow:hover{box-shadow:0 0 20px rgba(0,212,255,0.25)}
+
+  /* Badge con dot */
+  .badge-dot::before{
+    content:'';width:6px;height:6px;border-radius:50%;flex-shrink:0;
+  }
+  .badge-dot.accent::before{background:var(--accent);box-shadow:0 0 8px var(--accent)}
+  .badge-dot.success::before{background:var(--success);box-shadow:0 0 8px var(--success)}
+  .badge-dot.warning::before{background:var(--warning);box-shadow:0 0 8px var(--warning)}
+  .badge-dot.error::before{background:var(--error);box-shadow:0 0 8px var(--error)}
+
+  /* === TAGS === */
+  .tag{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:4px 12px;border-radius:8px;
+    font-size:12px;font-weight:500;
+    font-family:'JetBrains Mono',monospace;
+    transition:all 0.3s ease;cursor:default;
+  }
+  .tag-tech{background:rgba(0,212,255,0.08);color:var(--accent);border:1px solid rgba(0,212,255,0.15)}
+  .tag-category{background:var(--glass);color:var(--text2);border:1px solid var(--border)}
+  .tag-removable{cursor:pointer}
+  .tag-removable:hover{background:rgba(255,77,106,0.1);border-color:rgba(255,77,106,0.3);color:var(--error)}
+  .tag-close{font-size:14px;line-height:1;opacity:0.6}
+  .tag-removable:hover .tag-close{opacity:1}
+
+  /* === STATUS INDICATORS === */
+  .status{
+    display:inline-flex;align-items:center;gap:8px;
+    font-size:13px;font-weight:500;font-family:'Inter',sans-serif;
+  }
+  .status-dot{
+    width:8px;height:8px;border-radius:50%;flex-shrink:0;
+  }
+  .status-online .status-dot{background:var(--success);box-shadow:0 0 8px var(--success);animation:pulse 2s infinite}
+  .status-offline .status-dot{background:var(--text3)}
+  .status-busy .status-dot{background:var(--warning);box-shadow:0 0 8px var(--warning)}
+  .status-error .status-dot{background:var(--error);box-shadow:0 0 8px var(--error)}
+
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+
+  /* === NOTIFICATION DOT === */
+  .notif-wrapper{position:relative;display:inline-block}
+  .notif-dot{
+    position:absolute;top:-4px;right:-4px;
+    min-width:18px;height:18px;border-radius:50%;
+    background:var(--error);color:#fff;
+    font-size:10px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;
+    padding:0 4px;
+    box-shadow:0 0 8px rgba(255,77,106,0.4);
+  }
+  .notif-icon{
+    width:40px;height:40px;border-radius:12px;
+    background:var(--glass);border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;
+  }
+</style>
+</head>
+<body>
+  <h1>Badges, Tags & Status</h1>
+  <p class="subtitle">ReveciaNet Design System — Indicadores visuales y etiquetas</p>
+
+  <div class="section">
+    <div class="section-title">Badges — Subtle</div>
+    <div class="row">
+      <span class="badge badge-accent">IA Activa</span>
+      <span class="badge badge-success">Completado</span>
+      <span class="badge badge-warning">En revisión</span>
+      <span class="badge badge-error">Error</span>
+      <span class="badge badge-neutral">Borrador</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Badges — Solid</div>
+    <div class="row">
+      <span class="badge badge-solid-accent">Nuevo</span>
+      <span class="badge badge-solid-success">Activo</span>
+      <span class="badge badge-solid-error">Urgente</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Badges — Glow</div>
+    <div class="row">
+      <span class="badge badge-glow">Automatización IA</span>
+      <span class="badge badge-glow">Machine Learning</span>
+      <span class="badge badge-glow">Auditoría Smart</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Badges — Con indicador</div>
+    <div class="row">
+      <span class="badge badge-neutral badge-dot accent">Sistema operativo</span>
+      <span class="badge badge-neutral badge-dot success">Pipeline activo</span>
+      <span class="badge badge-neutral badge-dot warning">Procesando datos</span>
+      <span class="badge badge-neutral badge-dot error">Servicio caído</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Tags — Tecnología</div>
+    <div class="row">
+      <span class="tag tag-tech">Python</span>
+      <span class="tag tag-tech">TensorFlow</span>
+      <span class="tag tag-tech">GPT-4</span>
+      <span class="tag tag-tech">Node.js</span>
+      <span class="tag tag-tech">API REST</span>
+    </div>
+    <div class="row" style="margin-top:16px">
+      <span class="tag tag-category">Marketing</span>
+      <span class="tag tag-category">Automatización</span>
+      <span class="tag tag-category">Consultoría</span>
+    </div>
+    <div class="row" style="margin-top:16px">
+      <span class="tag tag-tech tag-removable">React <span class="tag-close">&times;</span></span>
+      <span class="tag tag-tech tag-removable">Next.js <span class="tag-close">&times;</span></span>
+      <span class="tag tag-tech tag-removable">Vercel <span class="tag-close">&times;</span></span>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Status Indicators</div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="status status-online"><div class="status-dot"></div>Sistema operativo</div>
+      <div class="status status-busy"><div class="status-dot"></div>Procesando solicitud</div>
+      <div class="status status-error"><div class="status-dot"></div>Error de conexión</div>
+      <div class="status status-offline"><div class="status-dot"></div>Servicio desactivado</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Notification Dots</div>
+    <div class="row">
+      <div class="notif-wrapper">
+        <div class="notif-icon"><svg width="20" height="20" fill="none" stroke="#A0A0B0" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg></div>
+        <span class="notif-dot">3</span>
+      </div>
+      <div class="notif-wrapper">
+        <div class="notif-icon"><svg width="20" height="20" fill="none" stroke="#A0A0B0" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
+        <span class="notif-dot">12</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

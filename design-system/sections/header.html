@@ -1,0 +1,149 @@
+<!-- @dsCard group="Sections" -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReveciaNet — Header / Navegación</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500&display=swap');
+  :root {
+    --bg:#000;--accent:#00D4FF;--text:#F0F0F5;--text2:#A0A0B0;--text3:#606070;
+    --glass:rgba(255,255,255,0.04);--glass-hover:rgba(255,255,255,0.07);
+    --border:rgba(255,255,255,0.08);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+  /* === HEADER === */
+  .header{
+    position:fixed;top:0;left:0;right:0;z-index:100;
+    padding:0 40px;height:72px;
+    display:flex;align-items:center;justify-content:space-between;
+    background:rgba(0,0,0,0.6);
+    backdrop-filter:blur(24px) saturate(180%);
+    -webkit-backdrop-filter:blur(24px) saturate(180%);
+    border-bottom:1px solid var(--border);
+    transition:all 0.3s ease;
+  }
+  .header.scrolled{
+    background:rgba(0,0,0,0.85);
+    box-shadow:0 4px 30px rgba(0,0,0,0.5);
+  }
+
+  .logo{display:flex;align-items:center;gap:12px;text-decoration:none}
+  .logo-icon{
+    width:36px;height:36px;
+    background:linear-gradient(135deg,#1B3A5C,#F0F0F5);
+    border-radius:8px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:16px;font-weight:700;color:#000;
+  }
+  .logo-text{
+    font-size:20px;font-weight:700;color:var(--text);
+    letter-spacing:-0.02em;
+  }
+  .logo-text span{color:var(--accent)}
+
+  .nav{display:flex;align-items:center;gap:32px}
+  .nav-link{
+    color:var(--text2);text-decoration:none;font-size:14px;font-weight:500;
+    transition:color 0.3s ease;position:relative;padding:4px 0;
+  }
+  .nav-link::after{
+    content:'';position:absolute;bottom:-2px;left:0;right:0;
+    height:2px;background:var(--accent);border-radius:1px;
+    transform:scaleX(0);transition:transform 0.3s ease;
+    box-shadow:0 0 8px rgba(0,212,255,0.4);
+  }
+  .nav-link:hover{color:var(--text)}
+  .nav-link:hover::after{transform:scaleX(1)}
+  .nav-link.active{color:var(--accent)}
+  .nav-link.active::after{transform:scaleX(1)}
+
+  .nav-actions{display:flex;align-items:center;gap:12px}
+
+  .btn-nav-secondary{
+    padding:10px 20px;border-radius:10px;font-size:14px;font-weight:500;
+    background:transparent;color:var(--text2);border:1px solid var(--border);
+    cursor:pointer;transition:all 0.3s ease;
+    font-family:'Space Grotesk',sans-serif;
+  }
+  .btn-nav-secondary:hover{border-color:rgba(255,255,255,0.2);color:var(--text)}
+
+  .btn-nav-primary{
+    padding:10px 20px;border-radius:10px;font-size:14px;font-weight:600;
+    background:var(--accent);color:#000;border:none;
+    cursor:pointer;transition:all 0.3s ease;
+    font-family:'Space Grotesk',sans-serif;
+    box-shadow:0 0 15px rgba(0,212,255,0.3);
+  }
+  .btn-nav-primary:hover{
+    box-shadow:0 0 25px rgba(0,212,255,0.5);
+    transform:translateY(-1px);
+  }
+
+  /* === DEMO CONTENT === */
+  .demo{padding:120px 40px 40px;max-width:800px}
+  .demo h2{font-size:32px;font-weight:700;margin-bottom:16px}
+  .demo p{font-size:16px;color:var(--text2);line-height:1.7;font-family:'Inter',sans-serif}
+
+  /* === MOBILE MENU BUTTON === */
+  .menu-toggle{
+    display:none;width:40px;height:40px;
+    background:var(--glass);border:1px solid var(--border);
+    border-radius:10px;cursor:pointer;
+    flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  }
+  .menu-toggle span{
+    width:18px;height:1.5px;background:var(--text);
+    transition:all 0.3s ease;border-radius:2px;
+  }
+
+  @media(max-width:768px){
+    .nav{display:none}
+    .btn-nav-secondary{display:none}
+    .menu-toggle{display:flex}
+  }
+
+  /* Scroll indicator */
+  .scroll-progress{
+    position:fixed;top:72px;left:0;height:2px;z-index:101;
+    background:linear-gradient(90deg,var(--accent),#0066CC);
+    width:35%;
+    box-shadow:0 0 10px rgba(0,212,255,0.5);
+  }
+</style>
+</head>
+<body>
+  <header class="header scrolled">
+    <a href="#" class="logo">
+      <div class="logo-icon">SN</div>
+      <div class="logo-text">Revecia<span>Net</span></div>
+    </a>
+
+    <nav class="nav">
+      <a href="#" class="nav-link active">Inicio</a>
+      <a href="#" class="nav-link">Servicios</a>
+      <a href="#" class="nav-link">Casos de éxito</a>
+      <a href="#" class="nav-link">Sobre nosotros</a>
+      <a href="#" class="nav-link">Blog</a>
+    </nav>
+
+    <div class="nav-actions">
+      <button class="btn-nav-secondary">Iniciar sesión</button>
+      <button class="btn-nav-primary">Solicitar demo</button>
+      <button class="menu-toggle"><span></span><span></span><span></span></button>
+    </div>
+  </header>
+
+  <div class="scroll-progress"></div>
+
+  <div class="demo">
+    <h2>Header con efecto glassmorphism</h2>
+    <p>Navegación fija con blur de fondo que se intensifica al hacer scroll. El logo integra las iniciales SN del imagotipo original. Los links tienen un efecto de subrayado con glow cian al hacer hover. El botón primario "Solicitar demo" mantiene el glow neón sutil.</p>
+    <br>
+    <p>Incluye una barra de progreso de scroll con gradiente, menú responsive con hamburger icon, y transición suave al cambiar de estado normal a scrolled.</p>
+  </div>
+</body>
+</html>

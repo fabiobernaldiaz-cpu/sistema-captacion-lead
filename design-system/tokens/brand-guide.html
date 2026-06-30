@@ -1,0 +1,231 @@
+<!-- @dsCard group="Brand" -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReveciaNet — Guía de Marca</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400&display=swap');
+  :root {
+    --bg:#000;--accent:#00D4FF;--text:#F0F0F5;--text2:#A0A0B0;--text3:#606070;
+    --glass:rgba(255,255,255,0.04);--border:rgba(255,255,255,0.08);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);padding:40px}
+  h1{font-size:28px;font-weight:700;margin-bottom:8px;background:linear-gradient(135deg,#00D4FF,#0066CC);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .subtitle{font-size:14px;color:var(--text2);margin-bottom:48px}
+  .section{margin-bottom:56px}
+  .section-title{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin-bottom:24px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+
+  .brand-card{
+    background:var(--glass);border:1px solid var(--border);
+    border-radius:20px;padding:40px;margin-bottom:24px;
+    backdrop-filter:blur(12px);
+  }
+
+  .logo-display{
+    display:flex;align-items:center;gap:40px;flex-wrap:wrap;
+    margin-bottom:32px;
+  }
+  .logo-main{
+    display:flex;align-items:center;gap:16px;
+    padding:32px 48px;border-radius:16px;
+    background:var(--bg);border:1px solid var(--border);
+  }
+  .logo-icon-lg{
+    width:56px;height:56px;border-radius:12px;
+    background:linear-gradient(135deg,#1B3A5C,#F0F0F5);
+    display:flex;align-items:center;justify-content:center;
+    font-size:22px;font-weight:700;color:#000;
+  }
+  .logo-wordmark{font-size:32px;font-weight:700;letter-spacing:-0.02em}
+  .logo-wordmark span{color:var(--accent)}
+
+  .logo-alt{
+    padding:32px 48px;border-radius:16px;
+    border:1px solid var(--border);
+  }
+  .logo-light{background:#F0F0F5}
+  .logo-light .logo-wordmark{color:#000}
+  .logo-light .logo-wordmark span{color:#0099CC}
+
+  .values-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px}
+  .value-card{
+    background:var(--glass);border:1px solid var(--border);
+    border-radius:16px;padding:28px;
+    transition:all 0.3s ease;
+  }
+  .value-card:hover{border-color:rgba(0,212,255,0.2);transform:translateY(-2px)}
+  .value-icon{
+    width:44px;height:44px;border-radius:12px;
+    background:rgba(0,212,255,0.08);
+    display:flex;align-items:center;justify-content:center;
+    margin-bottom:16px;font-size:20px;
+  }
+  .value-name{font-size:18px;font-weight:600;margin-bottom:6px}
+  .value-desc{font-size:13px;color:var(--text2);line-height:1.6;font-family:'Inter',sans-serif}
+
+  .tagline-display{
+    font-size:clamp(28px,4vw,48px);font-weight:700;
+    text-align:center;padding:60px 20px;
+    letter-spacing:-0.02em;
+  }
+  .tagline-display span{
+    background:linear-gradient(135deg,#00D4FF,#0066CC);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  }
+
+  .tone-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .tone-do,.tone-dont{
+    padding:24px;border-radius:14px;
+  }
+  .tone-do{background:rgba(0,230,138,0.06);border:1px solid rgba(0,230,138,0.15)}
+  .tone-dont{background:rgba(255,77,106,0.06);border:1px solid rgba(255,77,106,0.15)}
+  .tone-label{font-size:13px;font-weight:600;margin-bottom:12px}
+  .tone-do .tone-label{color:#00E68A}
+  .tone-dont .tone-label{color:#FF4D6A}
+  .tone-list{list-style:none;font-size:13px;color:var(--text2);font-family:'Inter',sans-serif;line-height:2}
+
+  .audience-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+  .audience-card{
+    background:var(--glass);border:1px solid var(--border);
+    border-radius:14px;padding:24px;text-align:center;
+  }
+  .audience-icon{font-size:32px;margin-bottom:12px}
+  .audience-name{font-size:15px;font-weight:600;margin-bottom:4px}
+  .audience-desc{font-size:12px;color:var(--text3);font-family:'Inter',sans-serif}
+
+  .tagline-options{
+    display:grid;grid-template-columns:1fr;gap:12px;max-width:600px;
+  }
+  .tagline-option{
+    background:var(--glass);border:1px solid var(--border);
+    border-radius:12px;padding:20px 24px;
+    transition:all 0.3s ease;cursor:pointer;
+  }
+  .tagline-option:hover{border-color:rgba(0,212,255,0.25)}
+  .tagline-option.selected{border-color:var(--accent);background:rgba(0,212,255,0.06)}
+  .tagline-text{font-size:18px;font-weight:600;margin-bottom:4px}
+  .tagline-context{font-size:12px;color:var(--text3);font-family:'Inter',sans-serif}
+</style>
+</head>
+<body>
+  <h1>Guía de Marca</h1>
+  <p class="subtitle">ReveciaNet Design System — Identidad, valores y voz de marca</p>
+
+  <!-- LOGO -->
+  <div class="section">
+    <div class="section-title">Logotipo</div>
+    <div class="logo-display">
+      <div class="logo-main">
+        <div class="logo-icon-lg">SN</div>
+        <div class="logo-wordmark">Revecia<span>Net</span></div>
+      </div>
+      <div class="logo-main logo-alt logo-light">
+        <div class="logo-icon-lg">SN</div>
+        <div class="logo-wordmark">Revecia<span>Net</span></div>
+      </div>
+    </div>
+    <p style="font-size:13px;color:var(--text3);font-family:'Inter',sans-serif;line-height:1.7">
+      El imagotipo combina las iniciales <strong style="color:var(--text)">SN</strong> (del isotipo original con la S en navy blue y la N en gradiente white) con el wordmark <strong style="color:var(--text)">ReveciaNet</strong>. La parte "Net" se destaca en cian (#00D4FF) para reforzar la identidad tech. En fondos claros, el cian se ajusta a #0099CC para mantener contraste.
+    </p>
+  </div>
+
+  <!-- TAGLINE -->
+  <div class="section">
+    <div class="section-title">Tagline</div>
+    <div class="brand-card" style="text-align:center">
+      <div class="tagline-display"><span>Inteligencia</span> que transforma</div>
+    </div>
+    <p style="font-size:14px;color:var(--text2);margin-bottom:20px;font-family:'Inter',sans-serif">Opciones alternativas de tagline:</p>
+    <div class="tagline-options">
+      <div class="tagline-option selected"><div class="tagline-text">Inteligencia que transforma</div><div class="tagline-context">Actual — Directo, aspiracional, conecta IA con impacto real</div></div>
+      <div class="tagline-option"><div class="tagline-text">Tu empresa, potenciada por IA</div><div class="tagline-context">Centrado en el cliente, beneficio claro, tono cercano</div></div>
+      <div class="tagline-option"><div class="tagline-text">Automatiza. Optimiza. Lidera.</div><div class="tagline-context">Triple acción, ritmo potente, orientado a resultados</div></div>
+      <div class="tagline-option"><div class="tagline-text">La IA que tu negocio necesita</div><div class="tagline-context">Directo al pain point, sencillo, accesible para PYMEs</div></div>
+      <div class="tagline-option"><div class="tagline-text">Sistemas inteligentes, resultados reales</div><div class="tagline-context">Contraste tech/tangible, genera confianza, profesional</div></div>
+    </div>
+  </div>
+
+  <!-- VALORES -->
+  <div class="section">
+    <div class="section-title">Valores de Marca</div>
+    <div class="values-grid">
+      <div class="value-card">
+        <div class="value-icon">🤝</div>
+        <div class="value-name">Fidelidad</div>
+        <div class="value-desc">Relaciones a largo plazo con nuestros clientes. No vendemos proyectos, construimos partnerships.</div>
+      </div>
+      <div class="value-card">
+        <div class="value-icon">⚡</div>
+        <div class="value-name">Disruptivo</div>
+        <div class="value-desc">Desafiamos el status quo con tecnología de vanguardia. Si hay un camino mejor, lo encontramos.</div>
+      </div>
+      <div class="value-card">
+        <div class="value-icon">🛡️</div>
+        <div class="value-name">Confiable</div>
+        <div class="value-desc">Resultados medibles, plazos cumplidos, comunicación transparente. Tu inversión está segura.</div>
+      </div>
+      <div class="value-card">
+        <div class="value-icon">🏗️</div>
+        <div class="value-name">Sólido</div>
+        <div class="value-desc">Arquitecturas robustas, procesos probados, soluciones que escalan con tu negocio.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PÚBLICO -->
+  <div class="section">
+    <div class="section-title">Público Objetivo</div>
+    <div class="audience-grid">
+      <div class="audience-card">
+        <div class="audience-icon">🏢</div>
+        <div class="audience-name">PYMEs</div>
+        <div class="audience-desc">Empresas que buscan automatizar y optimizar con presupuesto definido</div>
+      </div>
+      <div class="audience-card">
+        <div class="audience-icon">🏭</div>
+        <div class="audience-name">Corporaciones</div>
+        <div class="audience-desc">Grandes empresas que necesitan auditoría e implementación a escala</div>
+      </div>
+      <div class="audience-card">
+        <div class="audience-icon">⚙️</div>
+        <div class="audience-name">Sector Industrial</div>
+        <div class="audience-desc">Manufactura, logística e industria en proceso de transformación digital</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TONO -->
+  <div class="section">
+    <div class="section-title">Tono de Comunicación</div>
+    <div class="tone-grid">
+      <div class="tone-do">
+        <div class="tone-label">SÍ — Así hablamos</div>
+        <ul class="tone-list">
+          <li>Profesional pero accesible</li>
+          <li>Datos y resultados concretos</li>
+          <li>Lenguaje directo y sin rodeos</li>
+          <li>"Reducimos tus costes un 60%"</li>
+          <li>"Implementamos en 3 semanas"</li>
+          <li>Técnico cuando suma valor</li>
+          <li>Aspiracional pero realista</li>
+        </ul>
+      </div>
+      <div class="tone-dont">
+        <div class="tone-label">NO — Esto evitamos</div>
+        <ul class="tone-list">
+          <li>Buzzwords vacíos sin datos</li>
+          <li>Tono corporativo impersonal</li>
+          <li>"Soluciones sinérgicas integrales"</li>
+          <li>"Revolucionamos el paradigma"</li>
+          <li>Promesas sin métricas</li>
+          <li>Jerga técnica innecesaria</li>
+          <li>Tono informal o humorístico</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

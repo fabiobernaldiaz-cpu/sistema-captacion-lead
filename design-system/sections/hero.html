@@ -1,0 +1,252 @@
+<!-- @dsCard group="Sections" -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReveciaNet — Hero Section</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400&display=swap');
+  :root {
+    --bg:#000;--accent:#00D4FF;--text:#F0F0F5;--text2:#A0A0B0;--text3:#606070;
+    --glass:rgba(255,255,255,0.04);--border:rgba(255,255,255,0.08);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+
+  .hero{
+    min-height:100vh;display:flex;align-items:center;justify-content:center;
+    position:relative;overflow:hidden;padding:40px;
+  }
+
+  /* === EFECTOS DE FONDO === */
+  .hero-bg{
+    position:absolute;inset:0;
+    background:radial-gradient(ellipse 80% 60% at 50% 40%,rgba(0,212,255,0.06),transparent 70%);
+  }
+
+  .grid-pattern{
+    position:absolute;inset:0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(0,212,255,0.03) 1px,transparent 1px);
+    background-size:60px 60px;
+    mask-image:radial-gradient(ellipse 70% 50% at 50% 50%,black,transparent);
+    -webkit-mask-image:radial-gradient(ellipse 70% 50% at 50% 50%,black,transparent);
+  }
+
+  .orb{
+    position:absolute;border-radius:50%;
+    filter:blur(80px);opacity:0.4;
+    animation:float 8s ease-in-out infinite;
+  }
+  .orb-1{width:400px;height:400px;background:rgba(0,212,255,0.15);top:10%;left:20%;animation-delay:0s}
+  .orb-2{width:300px;height:300px;background:rgba(27,58,92,0.3);bottom:20%;right:15%;animation-delay:-3s}
+  .orb-3{width:200px;height:200px;background:rgba(0,102,204,0.12);top:60%;left:60%;animation-delay:-5s}
+
+  @keyframes float{
+    0%,100%{transform:translate(0,0) scale(1)}
+    25%{transform:translate(30px,-20px) scale(1.05)}
+    50%{transform:translate(-20px,30px) scale(0.95)}
+    75%{transform:translate(20px,20px) scale(1.02)}
+  }
+
+  /* Partículas */
+  .particles{position:absolute;inset:0;overflow:hidden}
+  .particle{
+    position:absolute;width:2px;height:2px;
+    background:var(--accent);border-radius:50%;
+    opacity:0;animation:particle-float 6s ease-in-out infinite;
+  }
+  @keyframes particle-float{
+    0%{opacity:0;transform:translateY(100vh)}
+    10%{opacity:0.6}
+    90%{opacity:0.6}
+    100%{opacity:0;transform:translateY(-10vh)}
+  }
+
+  .hero-content{
+    text-align:center;max-width:900px;
+    position:relative;z-index:2;
+    animation:fadeUp 1s ease-out;
+  }
+  @keyframes fadeUp{
+    from{opacity:0;transform:translateY(40px)}
+    to{opacity:1;transform:translateY(0)}
+  }
+
+  .hero-badge{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:8px 20px;border-radius:50px;
+    background:rgba(0,212,255,0.08);
+    border:1px solid rgba(0,212,255,0.2);
+    font-size:13px;font-weight:500;color:var(--accent);
+    margin-bottom:32px;
+    animation:fadeUp 1s ease-out 0.2s both;
+  }
+  .hero-badge-dot{
+    width:6px;height:6px;border-radius:50%;
+    background:var(--accent);
+    box-shadow:0 0 8px var(--accent);
+    animation:pulse 2s infinite;
+  }
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+  .hero-title{
+    font-size:clamp(40px,7vw,80px);
+    font-weight:700;line-height:1.05;
+    letter-spacing:-0.03em;
+    margin-bottom:24px;
+    animation:fadeUp 1s ease-out 0.4s both;
+  }
+  .hero-title .gradient{
+    background:linear-gradient(135deg,#00D4FF 0%,#0066CC 50%,#00D4FF 100%);
+    background-size:200% auto;
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+    animation:shimmer 3s linear infinite;
+  }
+  @keyframes shimmer{to{background-position:200% center}}
+
+  .hero-subtitle{
+    font-size:clamp(16px,2.5vw,20px);
+    color:var(--text2);line-height:1.7;
+    max-width:640px;margin:0 auto 40px;
+    font-family:'Inter',sans-serif;font-weight:400;
+    animation:fadeUp 1s ease-out 0.6s both;
+  }
+
+  .hero-actions{
+    display:flex;gap:16px;justify-content:center;flex-wrap:wrap;
+    animation:fadeUp 1s ease-out 0.8s both;
+  }
+
+  .btn{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:16px 32px;border-radius:12px;
+    font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;
+    text-decoration:none;cursor:pointer;
+    transition:all 0.3s cubic-bezier(0.4,0,0.2,1);
+    border:none;
+  }
+  .btn-primary{
+    background:var(--accent);color:#000;
+    box-shadow:0 0 25px rgba(0,212,255,0.4),0 8px 24px rgba(0,0,0,0.3);
+  }
+  .btn-primary:hover{
+    box-shadow:0 0 40px rgba(0,212,255,0.6),0 12px 32px rgba(0,0,0,0.4);
+    transform:translateY(-3px);
+  }
+  .btn-secondary{
+    background:var(--glass);color:var(--text);
+    border:1px solid var(--border);
+    backdrop-filter:blur(12px);
+  }
+  .btn-secondary:hover{
+    border-color:rgba(0,212,255,0.3);
+    box-shadow:0 0 20px rgba(0,212,255,0.1);
+    transform:translateY(-3px);
+  }
+
+  .arrow{transition:transform 0.3s ease}
+  .btn:hover .arrow{transform:translateX(4px)}
+
+  /* Trusted by */
+  .hero-trust{
+    margin-top:80px;
+    animation:fadeUp 1s ease-out 1s both;
+  }
+  .trust-label{
+    font-size:12px;color:var(--text3);text-transform:uppercase;
+    letter-spacing:2px;font-weight:500;margin-bottom:24px;
+  }
+  .trust-logos{
+    display:flex;gap:40px;justify-content:center;align-items:center;
+    opacity:0.4;
+  }
+  .trust-logo{
+    font-size:18px;font-weight:600;color:var(--text3);
+    letter-spacing:1px;
+  }
+
+  /* Stats bar */
+  .hero-stats{
+    display:flex;gap:48px;justify-content:center;
+    margin-top:64px;padding-top:32px;
+    border-top:1px solid var(--border);
+    animation:fadeUp 1s ease-out 1.2s both;
+  }
+  .stat{text-align:center}
+  .stat-number{
+    font-size:32px;font-weight:700;
+    font-family:'JetBrains Mono',monospace;
+    color:var(--accent);
+  }
+  .stat-label{
+    font-size:13px;color:var(--text3);margin-top:4px;
+    font-family:'Inter',sans-serif;
+  }
+</style>
+</head>
+<body>
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="grid-pattern"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <div class="particles">
+      <div class="particle" style="left:10%;animation-delay:0s"></div>
+      <div class="particle" style="left:20%;animation-delay:1s"></div>
+      <div class="particle" style="left:35%;animation-delay:2s"></div>
+      <div class="particle" style="left:50%;animation-delay:0.5s"></div>
+      <div class="particle" style="left:65%;animation-delay:3s"></div>
+      <div class="particle" style="left:75%;animation-delay:1.5s"></div>
+      <div class="particle" style="left:90%;animation-delay:2.5s"></div>
+    </div>
+
+    <div class="hero-content">
+      <div class="hero-badge">
+        <div class="hero-badge-dot"></div>
+        Inteligencia Artificial Aplicada
+      </div>
+
+      <h1 class="hero-title">
+        <span class="gradient">Inteligencia</span><br>
+        que transforma
+      </h1>
+
+      <p class="hero-subtitle">
+        Automatizamos procesos, implementamos sistemas inteligentes
+        y potenciamos tu empresa con IA de última generación.
+      </p>
+
+      <div class="hero-actions">
+        <a href="#" class="btn btn-primary">Solicitar demo gratuita <span class="arrow">&rarr;</span></a>
+        <a href="#" class="btn btn-secondary">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Ver cómo funciona
+        </a>
+      </div>
+
+      <div class="hero-trust">
+        <div class="trust-label">Confían en nosotros</div>
+        <div class="trust-logos">
+          <span class="trust-logo">INDUSTRIA+</span>
+          <span class="trust-logo">TECHCORP</span>
+          <span class="trust-logo">NEXUS</span>
+          <span class="trust-logo">DATAFLOW</span>
+          <span class="trust-logo">SOLVENTIA</span>
+        </div>
+      </div>
+
+      <div class="hero-stats">
+        <div class="stat"><div class="stat-number">+150</div><div class="stat-label">Proyectos IA</div></div>
+        <div class="stat"><div class="stat-number">97%</div><div class="stat-label">Satisfacción</div></div>
+        <div class="stat"><div class="stat-number">60%</div><div class="stat-label">Ahorro medio</div></div>
+        <div class="stat"><div class="stat-number">3.2x</div><div class="stat-label">ROI medio</div></div>
+      </div>
+    </div>
+  </section>
+</body>
+</html>

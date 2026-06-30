@@ -1,0 +1,214 @@
+<!-- @dsCard group="Components" -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReveciaNet — Formularios</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500&display=swap');
+  :root {
+    --bg:#000;--accent:#00D4FF;--accent-hover:#33DDFF;
+    --text:#F0F0F5;--text2:#A0A0B0;--text3:#606070;
+    --glass:rgba(255,255,255,0.04);--glass-hover:rgba(255,255,255,0.07);
+    --border:rgba(255,255,255,0.08);--border-hover:rgba(255,255,255,0.15);
+    --border-focus:rgba(0,212,255,0.5);
+    --error:#FF4D6A;--success:#00E68A;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);padding:40px}
+  h1{font-size:28px;font-weight:700;margin-bottom:8px;background:linear-gradient(135deg,#00D4FF,#0066CC);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .subtitle{font-size:14px;color:var(--text2);margin-bottom:48px}
+  .section{margin-bottom:48px}
+  .section-title{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin-bottom:24px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+
+  /* === FORM ELEMENTS === */
+  .form-group{margin-bottom:24px;max-width:420px}
+  .form-label{
+    display:block;font-size:13px;font-weight:500;color:var(--text2);
+    margin-bottom:8px;font-family:'Inter',sans-serif;
+  }
+  .form-label .required{color:var(--accent);margin-left:2px}
+
+  .form-input{
+    width:100%;padding:14px 16px;
+    font-family:'Inter',sans-serif;font-size:15px;color:var(--text);
+    background:var(--glass);
+    border:1px solid var(--border);border-radius:12px;
+    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    outline:none;
+    transition:all 0.3s ease;
+  }
+  .form-input::placeholder{color:var(--text3)}
+  .form-input:hover{border-color:var(--border-hover);background:var(--glass-hover)}
+  .form-input:focus{
+    border-color:var(--border-focus);
+    box-shadow:0 0 0 3px rgba(0,212,255,0.1),0 0 20px rgba(0,212,255,0.08);
+  }
+  .form-input.error{border-color:var(--error);box-shadow:0 0 0 3px rgba(255,77,106,0.1)}
+  .form-input.success{border-color:var(--success);box-shadow:0 0 0 3px rgba(0,230,138,0.1)}
+
+  .form-hint{font-size:12px;color:var(--text3);margin-top:6px;font-family:'Inter',sans-serif}
+  .form-hint.error{color:var(--error)}
+  .form-hint.success{color:var(--success)}
+
+  textarea.form-input{resize:vertical;min-height:120px;line-height:1.6}
+
+  select.form-input{
+    appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg width='12' height='8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5l5 5 5-5' stroke='%23606070' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 16px center;
+    padding-right:40px;cursor:pointer;
+  }
+
+  /* Checkbox & Radio */
+  .form-check{display:flex;align-items:center;gap:10px;margin-bottom:12px;cursor:pointer}
+  .form-check input[type="checkbox"],.form-check input[type="radio"]{
+    appearance:none;width:20px;height:20px;
+    border:1.5px solid var(--border);border-radius:6px;
+    background:var(--glass);cursor:pointer;
+    transition:all 0.2s ease;position:relative;flex-shrink:0;
+  }
+  .form-check input[type="radio"]{border-radius:50%}
+  .form-check input:hover{border-color:var(--border-hover)}
+  .form-check input:checked{
+    background:var(--accent);border-color:var(--accent);
+    box-shadow:0 0 12px rgba(0,212,255,0.3);
+  }
+  .form-check input:checked::after{
+    content:'✓';position:absolute;top:50%;left:50%;
+    transform:translate(-50%,-50%);color:#000;font-size:12px;font-weight:700;
+  }
+  .form-check input[type="radio"]:checked::after{
+    content:'';width:8px;height:8px;border-radius:50%;background:#000;
+  }
+  .form-check-label{font-size:14px;color:var(--text2);font-family:'Inter',sans-serif}
+
+  /* Toggle */
+  .toggle{
+    position:relative;width:48px;height:26px;
+    background:var(--glass);border:1px solid var(--border);
+    border-radius:50px;cursor:pointer;
+    transition:all 0.3s ease;flex-shrink:0;
+  }
+  .toggle::after{
+    content:'';position:absolute;top:3px;left:3px;
+    width:18px;height:18px;border-radius:50%;
+    background:var(--text3);transition:all 0.3s ease;
+  }
+  .toggle.active{
+    background:rgba(0,212,255,0.2);border-color:var(--accent);
+    box-shadow:0 0 12px rgba(0,212,255,0.2);
+  }
+  .toggle.active::after{
+    transform:translateX(22px);background:var(--accent);
+    box-shadow:0 0 8px rgba(0,212,255,0.4);
+  }
+
+  /* Lead Capture Form */
+  .lead-form{
+    background:var(--glass);border:1px solid var(--border);
+    border-radius:20px;padding:40px;max-width:480px;
+    backdrop-filter:blur(20px);position:relative;overflow:hidden;
+  }
+  .lead-form::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:1px;
+    background:linear-gradient(90deg,transparent,rgba(0,212,255,0.4),transparent);
+  }
+  .lead-form h3{font-size:24px;font-weight:700;margin-bottom:8px}
+  .lead-form p{font-size:14px;color:var(--text2);margin-bottom:28px;font-family:'Inter',sans-serif;line-height:1.6}
+
+  .btn-submit{
+    width:100%;padding:16px;font-size:16px;font-weight:600;
+    font-family:'Space Grotesk',sans-serif;
+    background:var(--accent);color:#000;border:none;
+    border-radius:12px;cursor:pointer;
+    box-shadow:0 0 20px rgba(0,212,255,0.3);
+    transition:all 0.3s ease;
+  }
+  .btn-submit:hover{
+    background:var(--accent-hover);
+    box-shadow:0 0 30px rgba(0,212,255,0.5);
+    transform:translateY(-2px);
+  }
+
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .form-row .form-group{max-width:none}
+</style>
+</head>
+<body>
+  <h1>Formularios</h1>
+  <p class="subtitle">ReveciaNet Design System — Inputs, selects, checkboxes y form de captación</p>
+
+  <div class="section">
+    <div class="section-title">Text Inputs</div>
+    <div class="form-group">
+      <label class="form-label">Email <span class="required">*</span></label>
+      <input type="email" class="form-input" placeholder="tu@empresa.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Empresa</label>
+      <input type="text" class="form-input" placeholder="Nombre de tu empresa" value="TechIndustria S.L.">
+      <div class="form-hint success">Empresa verificada</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Teléfono</label>
+      <input type="tel" class="form-input error" placeholder="+34 600 000 000" value="abc">
+      <div class="form-hint error">Introduce un teléfono válido</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Mensaje</label>
+      <textarea class="form-input" placeholder="Cuéntanos tu proyecto..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Servicio de interés</label>
+      <select class="form-input">
+        <option value="" disabled selected>Selecciona un servicio</option>
+        <option>Automatización con IA</option>
+        <option>Auditoría inteligente</option>
+        <option>Marketing digital</option>
+        <option>Consultoría estratégica</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Checkboxes & Radios</div>
+    <div style="margin-bottom:24px">
+      <label class="form-check"><input type="checkbox" checked><span class="form-check-label">Acepto la política de privacidad</span></label>
+      <label class="form-check"><input type="checkbox"><span class="form-check-label">Quiero recibir novedades sobre IA</span></label>
+      <label class="form-check"><input type="checkbox"><span class="form-check-label">Suscribirme al newsletter</span></label>
+    </div>
+    <div>
+      <label class="form-check"><input type="radio" name="plan" checked><span class="form-check-label">Plan Starter</span></label>
+      <label class="form-check"><input type="radio" name="plan"><span class="form-check-label">Plan Professional</span></label>
+      <label class="form-check"><input type="radio" name="plan"><span class="form-check-label">Plan Enterprise</span></label>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Toggles</div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;align-items:center;gap:12px"><div class="toggle active" onclick="this.classList.toggle('active')"></div><span style="font-size:14px;color:#A0A0B0;font-family:Inter,sans-serif">Notificaciones por email</span></div>
+      <div style="display:flex;align-items:center;gap:12px"><div class="toggle" onclick="this.classList.toggle('active')"></div><span style="font-size:14px;color:#A0A0B0;font-family:Inter,sans-serif">Informes automáticos</span></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Lead Capture Form (Completo)</div>
+    <div class="lead-form">
+      <h3>Solicita tu auditoría gratuita</h3>
+      <p>Descubre cómo la IA puede transformar tu negocio. Sin compromiso, sin letra pequeña.</p>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Nombre <span class="required">*</span></label><input type="text" class="form-input" placeholder="Tu nombre"></div>
+        <div class="form-group"><label class="form-label">Apellidos</label><input type="text" class="form-input" placeholder="Tus apellidos"></div>
+      </div>
+      <div class="form-group" style="max-width:none"><label class="form-label">Email corporativo <span class="required">*</span></label><input type="email" class="form-input" placeholder="tu@empresa.com"></div>
+      <div class="form-group" style="max-width:none"><label class="form-label">Empresa <span class="required">*</span></label><input type="text" class="form-input" placeholder="Nombre de la empresa"></div>
+      <div class="form-group" style="max-width:none"><label class="form-label">¿Qué necesitas?</label><select class="form-input"><option value="" disabled selected>Selecciona</option><option>Automatización IA</option><option>Auditoría</option><option>Marketing</option><option>No estoy seguro</option></select></div>
+      <div class="form-group" style="max-width:none"><label class="form-check"><input type="checkbox"><span class="form-check-label">Acepto la política de privacidad y el tratamiento de datos</span></label></div>
+      <button class="btn-submit">Solicitar auditoría gratuita &rarr;</button>
+    </div>
+  </div>
+</body>
+</html>
