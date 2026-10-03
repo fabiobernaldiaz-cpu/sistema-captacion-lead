@@ -1,0 +1,33 @@
+{
+  "name": "sistema-captacion-lead",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "tsx index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fabiobernaldiaz-cpu/sistema-captacion-lead.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/fabiobernaldiaz-cpu/sistema-captacion-lead/issues"
+  },
+  "homepage": "https://github.com/fabiobernaldiaz-cpu/sistema-captacion-lead#readme",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "@higgsfield/client": "^0.2.6",
+    "dotenv": "^18.0.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}
