@@ -3,13 +3,16 @@ name: Entregables · web para Hostinger + app de Windows
 # En cada push que toque la web o la app:
 #   - redesianet-web.zip  → listo para subir y descomprimir en public_html
 #   - RedesiaNet-Monitor-Setup-x.y.z.exe → instalador de la app de escritorio
-# Quedan como artefactos de la ejecución (30 días). Con una etiqueta vX.Y.Z
-# se publican además en la página de Releases del repositorio.
+# Quedan como artefactos de la ejecución (30 días). Para un enlace permanente,
+# publica una Release desde GitHub (Releases → Draft a new release → etiqueta
+# vX.Y.Z): este workflow le adjunta los dos ficheros automáticamente.
 on:
   push:
     branches: [main, "claude/**"]
     paths: ["web/**", "desktop/**", ".github/workflows/entregables.yml"]
     tags: ["v*"]
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -73,8 +76,8 @@ jobs:
           retention-days: 30
 
   release:
-    name: Publicar en Releases
-    if: startsWith(github.ref, 'refs/tags/v')
+    name: Adjuntar a la Release
+    if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/v')
     needs: [web, windows]
     runs-on: ubuntu-latest
     steps:
@@ -83,13 +86,17 @@ jobs:
           path: dist
           merge-multiple: true
 
-      - name: Crear la release
+      - name: Crear la release o adjuntar los ficheros
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release create "$GITHUB_REF_NAME" dist/* \
-            --repo "$GITHUB_REPOSITORY" \
-            --title "RedesiaNet $GITHUB_REF_NAME" \
-            --notes "**redesianet-web.zip**: súbelo a Hostinger (Administrador de archivos → public_html → Subir → Extraer) y abre https://redesianet.com/api/setup.php.
+          NOTES: |
+            **redesianet-web.zip**: súbelo a Hostinger (Administrador de archivos → public_html → Subir → Extraer) y abre https://redesianet.com/api/setup.php.
 
-          **RedesiaNet-Monitor-Setup.exe**: app de escritorio para Windows 10/11. Ábrela y pega el token que te da setup.php. Windows puede avisar de que la app no está firmada: «Más información» → «Ejecutar de todas formas»."
+            **RedesiaNet-Monitor-Setup.exe**: app de escritorio para Windows 10/11. Ábrela y pega el token que te da setup.php. Windows puede avisar de que la app no está firmada: «Más información» → «Ejecutar de todas formas».
+        run: |
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/* --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" \
+              --title "RedesiaNet $GITHUB_REF_NAME" --notes "$NOTES"
+          fi

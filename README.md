@@ -97,4 +97,5 @@ Después, convierte los masters a los ficheros web de `web/assets/video/` (MP4 H
 
 - La cabecera y el pie están repetidos en cada página (HTML plano, como antes): si cambias un enlace, cámbialo en todas.
 - Si modificas `css/styles.css` o un fichero de `js/`, sube el número `?v=3.0` en los `<link>`/`<script>` de las páginas para que los navegadores no usen la versión vieja.
-- Para generar otra versión de la app: cambia `version` en `desktop/package.json` y crea una etiqueta `vX.Y.Z`: GitHub Actions publicará la web y el instalador en *Releases*.
+- **Enlace de descarga permanente**: los artefactos de *Actions* caducan a los 30 días. Para tener la web y el instalador siempre a mano, en GitHub ve a *Releases → Draft a new release*, escribe una etiqueta nueva (p. ej. `v3.0.0`), elige la rama con estos cambios y pulsa *Publish*: el workflow «Entregables» adjunta solo `redesianet-web.zip` y el `.exe` a esa Release en unos minutos.
+- Para una versión nueva de la app, sube `version` en `desktop/package.json` antes de publicar la Release.
