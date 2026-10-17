@@ -330,7 +330,7 @@
   $("#d-mail").addEventListener("click", function () {
     var l = state.current;
     var subject = encodeURIComponent("Tu auditoría gratuita con RedesiaNet");
-    var body = encodeURIComponent("Hola " + l.name.split(" ")[0] + ":\n\nGracias por escribirnos. ¿Te viene bien una videollamada de 45 minutos esta semana para ver tu caso?\n\nUn saludo,\nFabio — RedesiaNet");
+    var body = encodeURIComponent("Hola " + l.name.split(" ")[0] + ":\n\nGracias por escribirnos. ¿Te viene bien una videollamada esta semana? Con una sola llamada hacemos tu auditoría y ves qué compensa automatizar.\n\nUn saludo,\nFabio — RedesiaNet");
     rn.openExternal("mailto:" + l.email + "?subject=" + subject + "&body=" + body);
     if (l.status === "nuevo") { $("#d-status").value = "contactado"; $("#d-status").dispatchEvent(new Event("change")); }
   });
