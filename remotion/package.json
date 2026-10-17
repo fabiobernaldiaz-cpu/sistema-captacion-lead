@@ -1,0 +1,30 @@
+{
+  "name": "redesianet-remotion",
+  "private": true,
+  "description": "Escenas 3D de RedesiaNet renderizadas con Remotion (vídeos del hero, póster e imagen para redes).",
+  "scripts": {
+    "studio": "remotion studio",
+    "render:hero": "remotion render HeroCore out/hero-core.mp4",
+    "render:flow": "remotion render AgentFlow out/agent-flow.mp4",
+    "render:og": "remotion still OgImage out/og-image.png",
+    "render:poster": "remotion still HeroCore out/hero-core-poster.png --frame=0",
+    "render": "npm run render:hero && npm run render:flow && npm run render:og && npm run render:poster"
+  },
+  "dependencies": {
+    "@fontsource-variable/fraunces": "5.3.0",
+    "@fontsource-variable/inter": "5.3.0",
+    "@react-three/fiber": "9.8.2",
+    "@remotion/cli": "4.0.536",
+    "@remotion/fonts": "4.0.536",
+    "@remotion/three": "4.0.536",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "remotion": "4.0.536",
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "@types/three": "0.186.0",
+    "typescript": "5.9.3"
+  }
+}
