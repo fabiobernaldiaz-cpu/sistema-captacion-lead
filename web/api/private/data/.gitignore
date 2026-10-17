@@ -1,0 +1,5 @@
+# La base de datos vive solo en el servidor: nunca en el repositorio
+*
+!.gitignore
+!.htaccess
+!index.html

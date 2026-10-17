@@ -1,0 +1,2 @@
+# config.php contiene secretos (lo genera setup.php en el servidor)
+config.php
