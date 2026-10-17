@@ -1,0 +1,61 @@
+{
+  "name": "redesianet-monitor",
+  "productName": "RedesiaNet Monitor",
+  "version": "1.0.0",
+  "description": "Panel de escritorio de redesianet.com: visitas en vivo, leads y avisos al instante.",
+  "author": "RedesiaNet <redesianet.contact@gmail.com>",
+  "homepage": "https://redesianet.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fabiobernaldiaz-cpu/sistema-captacion-lead.git",
+    "directory": "desktop"
+  },
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test \"test/*.test.js\"",
+    "dist:win": "electron-builder --win nsis --x64 --publish never"
+  },
+  "devDependencies": {
+    "electron": "44.9.0",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "com.redesianet.monitor",
+    "productName": "RedesiaNet Monitor",
+    "copyright": "© 2026 RedesiaNet",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "build/tray*.png",
+      "build/icon.png",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "artifactName": "RedesiaNet-Monitor-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "RedesiaNet Monitor",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false
+    }
+  }
+}
