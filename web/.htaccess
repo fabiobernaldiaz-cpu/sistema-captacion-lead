@@ -20,6 +20,15 @@ ErrorDocument 404 /404.html
   RewriteCond %{THE_REQUEST} \s/index\.html[\s?] [NC]
   RewriteRule ^index\.html$ / [L,R=301]
 
+  # URLs de la web anterior (ya indexadas): llevan a su equivalente nuevo
+  RewriteRule ^legal/aviso-legal/?$ /aviso-legal.html [R=301,L]
+  RewriteRule ^legal/privacidad/?$ /privacidad.html [R=301,L]
+  RewriteRule ^legal/cookies/?$ /cookies.html [R=301,L]
+  RewriteRule ^servicios/.+$ /servicios.html [R=301,L]
+  RewriteRule ^servicios/$ /servicios.html [R=301,L]
+  RewriteRule ^contacto/?$ /contacto.html [R=301,L]
+  RewriteRule ^quienes-somos/?$ /metodo.html [R=301,L]
+
   # nada de ficheros ocultos (.git, .env…) ni de la carpeta privada de la API
   RewriteRule (^|/)\.(?!well-known/) - [F,L]
   RewriteRule ^api/private(/|$) - [F,L]
