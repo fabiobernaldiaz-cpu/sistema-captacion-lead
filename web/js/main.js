@@ -168,6 +168,7 @@
   } else {
     revealables.forEach(function (el) { el.classList.add("is-in"); });
   }
+  window.RN_READY = true; // config.js deja de vigilar: las animaciones funcionan
 
   /* ── Contadores ───────────────────────────────────────────── */
   var counters = $$("[data-count]");

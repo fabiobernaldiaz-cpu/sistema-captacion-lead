@@ -344,7 +344,7 @@ body.menu-open { overflow: hidden; }
 }
 .hero-inner { position: relative; }
 .hero-copy { max-width: 760px; }
-.hero .display { margin-bottom: 1.6rem; }
+.hero .display { margin-bottom: 1.6rem; font-size: clamp(2.6rem, 4.9vw, 4.6rem); line-height: 1; }
 .hero .lede { max-width: 38ch; }
 .hero-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 2.2rem; }
 .hero-marks {

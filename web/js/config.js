@@ -22,3 +22,10 @@ window.RN_CONFIG = {
   metaPixelId: ""
 };
 document.documentElement.className += " js";
+// Red de seguridad: si main.js no llega a arrancar (bloqueado, error…), se
+// quita la clase "js" y todo el contenido se ve, aunque sin animaciones.
+document.addEventListener("DOMContentLoaded", function () {
+  setTimeout(function () {
+    if (!window.RN_READY) document.documentElement.classList.remove("js");
+  }, 2500);
+});
