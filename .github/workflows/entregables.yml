@@ -1,0 +1,95 @@
+name: Entregables · web para Hostinger + app de Windows
+
+# En cada push que toque la web o la app:
+#   - redesianet-web.zip  → listo para subir y descomprimir en public_html
+#   - RedesiaNet-Monitor-Setup-x.y.z.exe → instalador de la app de escritorio
+# Quedan como artefactos de la ejecución (30 días). Con una etiqueta vX.Y.Z
+# se publican además en la página de Releases del repositorio.
+on:
+  push:
+    branches: [main, "claude/**"]
+    paths: ["web/**", "desktop/**", ".github/workflows/entregables.yml"]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  web:
+    name: Paquete de la web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Comprobar la sintaxis PHP de la API
+        run: find web/api -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Empaquetar (sin secretos ni base de datos)
+        run: |
+          cd web
+          zip -qr ../redesianet-web.zip . -x 'api/private/config.php' -x 'api/private/data/*.sqlite*'
+          cd ..
+          unzip -l redesianet-web.zip | tail -1
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: redesianet-web
+          path: redesianet-web.zip
+          if-no-files-found: error
+          retention-days: 30
+
+  windows:
+    name: Instalador de Windows
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Pruebas
+        run: npm test
+
+      - name: Construir instalador
+        run: npx electron-builder --win nsis --x64 --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RedesiaNet-Monitor-Windows
+          path: desktop/dist/*.exe
+          if-no-files-found: error
+          retention-days: 30
+
+  release:
+    name: Publicar en Releases
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [web, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Crear la release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "RedesiaNet $GITHUB_REF_NAME" \
+            --notes "**redesianet-web.zip**: súbelo a Hostinger (Administrador de archivos → public_html → Subir → Extraer) y abre https://redesianet.com/api/setup.php.
+
+          **RedesiaNet-Monitor-Setup.exe**: app de escritorio para Windows 10/11. Ábrela y pega el token que te da setup.php. Windows puede avisar de que la app no está firmada: «Más información» → «Ejecutar de todas formas»."
