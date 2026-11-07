@@ -1,0 +1,1381 @@
+{
+  "name": "RedesiaNet · 2 · Enviador (aprobación por Telegram)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Enviador\nEscucha tu bot de Telegram. Solo obedece al chat de Fabio.\n\n- **/enviar ID** o botón ✅ → envía el email con Gmail y, si hay Instagram/Facebook, te pasa el DM listo para copiar\n- **/rechazar ID** o botón ❌\n- **/dm_ok ID** → marca el DM como enviado\n- **/pendientes**, **/ayuda**\n\nSe envía lo que haya en el Sheet en ese momento: si retocas el email en el CRM, se manda la versión retocada.",
+        "height": 300,
+        "width": 560,
+        "color": 5
+      },
+      "id": "667b780b-e705-55af-9e63-e645fe8aa54a",
+      "name": "Nota",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -560
+      ]
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message",
+          "callback_query"
+        ],
+        "additionalFields": {
+          "chatIds": "5246096132"
+        }
+      },
+      "id": "c6ae28c1-490a-55f0-965e-b6b0058942c2",
+      "name": "Telegram: órdenes",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "897784ce-ae19-5a86-b012-6d8267b9a3df",
+      "credentials": {
+        "telegramApi": {
+          "id": "cred-telegram",
+          "name": "Telegram Bot Captación"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4613d483-a1f4-59b4-97b0-dc021317f305",
+              "name": "telegram_chat_id",
+              "value": "5246096132",
+              "type": "string"
+            },
+            {
+              "id": "4b4f7130-f86c-5628-a65e-02287c0bffc0",
+              "name": "sheet_url",
+              "value": "https://docs.google.com/spreadsheets/d/1-l1Axsib6LDIm6TDv07FCAO13vpuQe_7240CvW3BPfk/edit",
+              "type": "string"
+            },
+            {
+              "id": "bb0ef97c-3490-512e-b9aa-29ea2eb6f8a5",
+              "name": "nombre_remitente",
+              "value": "Fabio Bernal",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "id": "6d16ff01-d9da-5cee-a23b-2dfa3b5335df",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        0
+      ],
+      "notesInFlow": true,
+      "notes": "Edita aquí los ajustes"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ---- utilidades comunes (se incrustan en los nodos Code al compilar) ----\nfunction ahoraMadrid() {\n  return DateTime.now().setZone('Europe/Madrid').toFormat('yyyy-MM-dd HH:mm');\n}\n\nfunction texto(v) {\n  return v === undefined || v === null ? '' : String(v).trim();\n}\n\n// Escapa texto para mensajes de Telegram con parse_mode = HTML\nfunction escHtml(v) {\n  return texto(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n}\n\n// OJO: el sandbox de los nodos Code de n8n NO tiene la clase URL. Usamos regex.\nfunction partesUrl(url) {\n  const u = texto(url);\n  const m = (/^https?:\\/\\//i.test(u) ? u : 'http://' + u).match(/^(https?:)\\/\\/([^/?#:@\\s]+)(?::(\\d+))?([^?#\\s]*)/i);\n  if (!m || !/\\./.test(m[2])) return null;\n  const host = m[2].toLowerCase();\n  return { protocolo: m[1].toLowerCase(), host, origen: m[1].toLowerCase() + '//' + host + (m[3] ? ':' + m[3] : ''), ruta: m[4] || '/' };\n}\n\nfunction dominioDe(url) {\n  const p = partesUrl(url);\n  return p ? p.host.replace(/^www\\d?\\./, '') : '';\n}\n\n// Resuelve un href (absoluto, //host, /ruta o relativo) contra la URL base.\nfunction resolverUrl(href, base) {\n  const h = texto(href);\n  const b = partesUrl(base);\n  if (!h || !b) return '';\n  if (/^https?:\\/\\//i.test(h)) return h;\n  if (h.startsWith('//')) return b.protocolo + h;\n  let ruta = h.startsWith('/') ? h : b.ruta.replace(/[^/]*$/, '') + h;\n  const [camino, resto = ''] = ruta.split(/(?=[?#])/);\n  const segs = [];\n  for (const s of camino.split('/')) {\n    if (s === '..') segs.pop();\n    else if (s !== '.') segs.push(s);\n  }\n  ruta = segs.join('/');\n  return b.origen + (ruta.startsWith('/') ? '' : '/') + ruta + resto;\n}\n\n// ¿El dominio o el email está en la pestaña Bloqueados? (acepta emails y dominios)\n// Un dominio genérico (gmail.com, hotmail.com…) nunca bloquea a todos sus usuarios:\n// para esos solo cuenta el email exacto.\nconst DOMINIOS_GENERICOS = /^(gmail\\.com|googlemail\\.com|hotmail\\.(com|es)|outlook\\.(com|es)|live\\.(com|es)|yahoo\\.(com|es)|icloud\\.com|me\\.com|msn\\.com|telefonica\\.net|movistar\\.es|ono\\.com|terra\\.es|aol\\.com|protonmail\\.com|proton\\.me)$/i;\nfunction estaBloqueado(valor, bloqueados) {\n  const v = texto(valor).toLowerCase();\n  if (!v) return false;\n  const dom = v.includes('@') ? v.split('@').pop() : v;\n  return bloqueados.some((b) => b === v || (!DOMINIOS_GENERICOS.test(b) && (b === dom || dom.endsWith('.' + b))));\n}\n\n// Traduce el mensaje o botón de Telegram a una orden: enviar | rechazar | dm_ok | pendientes | ayuda\nconst cfg = $('Config').first().json;\nconst u = $('Telegram: órdenes').first().json || {};\n\nlet txt = '';\nlet chatId = '';\nlet callbackId = '';\nif (u.callback_query) {\n  txt = texto(u.callback_query.data);\n  chatId = texto(u.callback_query.message && u.callback_query.message.chat && u.callback_query.message.chat.id);\n  callbackId = texto(u.callback_query.id);\n} else if (u.message) {\n  txt = texto(u.message.text);\n  chatId = texto(u.message.chat && u.message.chat.id);\n}\n\n// Seguridad: solo se obedece al chat de Fabio (el trigger ya filtra, esto es doble control).\nif (!chatId || chatId !== texto(cfg.telegram_chat_id)) return [];\n\nconst ALIAS = {\n  enviar: 'enviar', envia: 'enviar', send: 'enviar',\n  rechazar: 'rechazar', rechaza: 'rechazar', descartar: 'rechazar',\n  dm_ok: 'dm_ok', dmok: 'dm_ok',\n  pendientes: 'pendientes',\n  ayuda: 'ayuda', start: 'ayuda', help: 'ayuda',\n};\nconst m = txt.match(/^\\/?([a-zñ_]+)(?:@\\w+)?(?:[\\s:]+([a-z0-9]{4,12}))?/i);\nlet accion = (m && ALIAS[m[1].toLowerCase()]) || 'ayuda';\nconst leadId = m && m[2] ? m[2].toUpperCase() : '';\nlet aviso = '';\nif (['enviar', 'rechazar', 'dm_ok'].includes(accion) && !leadId) {\n  aviso = `Falta el ID del lead. Ejemplo: /${accion} K7Q2MX`;\n  accion = 'ayuda';\n}\n\nreturn [{ json: { accion, lead_id: leadId, chat_id: chatId, callback_id: callbackId, aviso } }];\n"
+      },
+      "id": "16a682da-fb0b-5299-8516-5e850133e52f",
+      "name": "Interpretar orden",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "bc2ca673-34f7-5984-b6c5-d920e3163000",
+              "leftValue": "={{ $json.callback_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "aae67606-c00e-55ab-a30d-7c3fc6cffec7",
+      "name": "¿Es un botón?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        660,
+        -200
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "callback",
+        "operation": "answerQuery",
+        "queryId": "={{ $json.callback_id }}",
+        "additionalFields": {
+          "text": "Recibido ✅"
+        }
+      },
+      "id": "6e0f44f1-f0e6-5ee8-849b-fc9fba5338b2",
+      "name": "Telegram: cerrar botón",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        880,
+        -220
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "cred-telegram",
+          "name": "Telegram Bot Captación"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "9bf6cdb7-b0dc-5e16-8acc-01e697d127a1",
+                    "leftValue": "={{ $json.accion }}",
+                    "rightValue": "ayuda",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ayuda"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "4fbc21b6-d512-5305-93f5-e829b771b586",
+                    "leftValue": "={{ $json.accion }}",
+                    "rightValue": "pendientes",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "pendientes"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "d8b52af1-2d6c-5663-b2ac-103d4f934c1f",
+                    "leftValue": "={{ $json.accion }}",
+                    "rightValue": "^(enviar|rechazar|dm_ok)$",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "lead"
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "f828f4d2-55fb-5e75-9041-43844896ac24",
+      "name": "Según orden",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        660,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ---- utilidades comunes (se incrustan en los nodos Code al compilar) ----\nfunction ahoraMadrid() {\n  return DateTime.now().setZone('Europe/Madrid').toFormat('yyyy-MM-dd HH:mm');\n}\n\nfunction texto(v) {\n  return v === undefined || v === null ? '' : String(v).trim();\n}\n\n// Escapa texto para mensajes de Telegram con parse_mode = HTML\nfunction escHtml(v) {\n  return texto(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n}\n\n// OJO: el sandbox de los nodos Code de n8n NO tiene la clase URL. Usamos regex.\nfunction partesUrl(url) {\n  const u = texto(url);\n  const m = (/^https?:\\/\\//i.test(u) ? u : 'http://' + u).match(/^(https?:)\\/\\/([^/?#:@\\s]+)(?::(\\d+))?([^?#\\s]*)/i);\n  if (!m || !/\\./.test(m[2])) return null;\n  const host = m[2].toLowerCase();\n  return { protocolo: m[1].toLowerCase(), host, origen: m[1].toLowerCase() + '//' + host + (m[3] ? ':' + m[3] : ''), ruta: m[4] || '/' };\n}\n\nfunction dominioDe(url) {\n  const p = partesUrl(url);\n  return p ? p.host.replace(/^www\\d?\\./, '') : '';\n}\n\n// Resuelve un href (absoluto, //host, /ruta o relativo) contra la URL base.\nfunction resolverUrl(href, base) {\n  const h = texto(href);\n  const b = partesUrl(base);\n  if (!h || !b) return '';\n  if (/^https?:\\/\\//i.test(h)) return h;\n  if (h.startsWith('//')) return b.protocolo + h;\n  let ruta = h.startsWith('/') ? h : b.ruta.replace(/[^/]*$/, '') + h;\n  const [camino, resto = ''] = ruta.split(/(?=[?#])/);\n  const segs = [];\n  for (const s of camino.split('/')) {\n    if (s === '..') segs.pop();\n    else if (s !== '.') segs.push(s);\n  }\n  ruta = segs.join('/');\n  return b.origen + (ruta.startsWith('/') ? '' : '/') + ruta + resto;\n}\n\n// ¿El dominio o el email está en la pestaña Bloqueados? (acepta emails y dominios)\n// Un dominio genérico (gmail.com, hotmail.com…) nunca bloquea a todos sus usuarios:\n// para esos solo cuenta el email exacto.\nconst DOMINIOS_GENERICOS = /^(gmail\\.com|googlemail\\.com|hotmail\\.(com|es)|outlook\\.(com|es)|live\\.(com|es)|yahoo\\.(com|es)|icloud\\.com|me\\.com|msn\\.com|telefonica\\.net|movistar\\.es|ono\\.com|terra\\.es|aol\\.com|protonmail\\.com|proton\\.me)$/i;\nfunction estaBloqueado(valor, bloqueados) {\n  const v = texto(valor).toLowerCase();\n  if (!v) return false;\n  const dom = v.includes('@') ? v.split('@').pop() : v;\n  return bloqueados.some((b) => b === v || (!DOMINIOS_GENERICOS.test(b) && (b === dom || dom.endsWith('.' + b))));\n}\n\nconst cfg = $('Config').first().json;\nconst aviso = texto($('Interpretar orden').first().json.aviso);\nconst lineas = [];\nif (aviso) lineas.push('⚠️ ' + escHtml(aviso), '');\nlineas.push(\n  '🤖 <b>Captación RedesiaNet</b>',\n  '',\n  '/enviar ID — envía el email (y te prepara el DM si hay Instagram/Facebook)',\n  '/rechazar ID — descarta el borrador',\n  '/dm_ok ID — marca que ya enviaste el DM',\n  '/pendientes — lista lo que falta por revisar',\n  '',\n  'También puedes usar los botones de cada borrador.',\n  `📄 <a href=\"${escHtml(cfg.sheet_url)}\">Abrir CRM</a>`,\n);\nreturn [{ json: { texto: lineas.join('\\n') } }];\n"
+      },
+      "id": "10cf9fd0-9ff1-5803-a528-93b92c941fcb",
+      "name": "Mensaje de ayuda",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        -40
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $('Config').first().json.telegram_chat_id }}",
+        "text": "={{ $json.texto }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML",
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "1faca8e2-bf72-5e31-9586-e84a54cd2456",
+      "name": "Telegram: ayuda",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1120,
+        -40
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "cred-telegram",
+          "name": "Telegram Bot Captación"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1-l1Axsib6LDIm6TDv07FCAO13vpuQe_7240CvW3BPfk",
+          "mode": "id",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-l1Axsib6LDIm6TDv07FCAO13vpuQe_7240CvW3BPfk/edit",
+          "cachedResultName": "CRM Captación B2B · RedesiaNet"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Leads",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "6d2c19f9-6ed7-5777-a7fe-41366145fee4",
+      "name": "Leer CRM",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        900,
+        120
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "cred-google-sheets",
+          "name": "Google Sheets RedesiaNet"
+        }
+      },
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// ---- utilidades comunes (se incrustan en los nodos Code al compilar) ----\nfunction ahoraMadrid() {\n  return DateTime.now().setZone('Europe/Madrid').toFormat('yyyy-MM-dd HH:mm');\n}\n\nfunction texto(v) {\n  return v === undefined || v === null ? '' : String(v).trim();\n}\n\n// Escapa texto para mensajes de Telegram con parse_mode = HTML\nfunction escHtml(v) {\n  return texto(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n}\n\n// OJO: el sandbox de los nodos Code de n8n NO tiene la clase URL. Usamos regex.\nfunction partesUrl(url) {\n  const u = texto(url);\n  const m = (/^https?:\\/\\//i.test(u) ? u : 'http://' + u).match(/^(https?:)\\/\\/([^/?#:@\\s]+)(?::(\\d+))?([^?#\\s]*)/i);\n  if (!m || !/\\./.test(m[2])) return null;\n  const host = m[2].toLowerCase();\n  return { protocolo: m[1].toLowerCase(), host, origen: m[1].toLowerCase() + '//' + host + (m[3] ? ':' + m[3] : ''), ruta: m[4] || '/' };\n}\n\nfunction dominioDe(url) {\n  const p = partesUrl(url);\n  return p ? p.host.replace(/^www\\d?\\./, '') : '';\n}\n\n// Resuelve un href (absoluto, //host, /ruta o relativo) contra la URL base.\nfunction resolverUrl(href, base) {\n  const h = texto(href);\n  const b = partesUrl(base);\n  if (!h || !b) return '';\n  if (/^https?:\\/\\//i.test(h)) return h;\n  if (h.startsWith('//')) return b.protocolo + h;\n  let ruta = h.startsWith('/') ? h : b.ruta.replace(/[^/]*$/, '') + h;\n  const [camino, resto = ''] = ruta.split(/(?=[?#])/);\n  const segs = [];\n  for (const s of camino.split('/')) {\n    if (s === '..') segs.pop();\n    else if (s !== '.') segs.push(s);\n  }\n  ruta = segs.join('/');\n  return b.origen + (ruta.startsWith('/') ? '' : '/') + ruta + resto;\n}\n\n// ¿El dominio o el email está en la pestaña Bloqueados? (acepta emails y dominios)\n// Un dominio genérico (gmail.com, hotmail.com…) nunca bloquea a todos sus usuarios:\n// para esos solo cuenta el email exacto.\nconst DOMINIOS_GENERICOS = /^(gmail\\.com|googlemail\\.com|hotmail\\.(com|es)|outlook\\.(com|es)|live\\.(com|es)|yahoo\\.(com|es)|icloud\\.com|me\\.com|msn\\.com|telefonica\\.net|movistar\\.es|ono\\.com|terra\\.es|aol\\.com|protonmail\\.com|proton\\.me)$/i;\nfunction estaBloqueado(valor, bloqueados) {\n  const v = texto(valor).toLowerCase();\n  if (!v) return false;\n  const dom = v.includes('@') ? v.split('@').pop() : v;\n  return bloqueados.some((b) => b === v || (!DOMINIOS_GENERICOS.test(b) && (b === dom || dom.endsWith('.' + b))));\n}\n\nconst cfg = $('Config').first().json;\nconst filas = $input.all().map((i) => i.json || {}).filter((r) => texto(r.lead_id));\nconst pend = filas.filter((r) => texto(r.estado) === 'pendiente_aprobacion');\nconst dms = filas.filter((r) => texto(r.dm_estado) === 'pendiente');\n\nconst lineas = [`📋 <b>${pend.length} borradores pendientes</b>`];\npend.slice(0, 30).forEach((r) => {\n  const extra = [r.zona, r.servicio_propuesto].map(texto).filter(Boolean).map(escHtml).join(' · ');\n  lineas.push(`• <code>${escHtml(r.lead_id)}</code> ${escHtml(r.empresa)}${extra ? ' · ' + extra : ''}`);\n});\nif (pend.length > 30) lineas.push(`… y ${pend.length - 30} más (míralos en el CRM)`);\nif (dms.length) {\n  lineas.push('', `💬 <b>${dms.length} DMs por enviar</b>`);\n  dms.slice(0, 15).forEach((r) => lineas.push(`• <code>${escHtml(r.lead_id)}</code> ${escHtml(r.empresa)}`));\n}\nlineas.push('', `📄 <a href=\"${escHtml(cfg.sheet_url)}\">Abrir CRM</a>`);\nreturn [{ json: { texto: lineas.join('\\n') } }];\n"
+      },
+      "id": "e7aedde9-36be-5977-bba9-70f19189c324",
+      "name": "Listar pendientes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $('Config').first().json.telegram_chat_id }}",
+        "text": "={{ $json.texto }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML",
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "479768ab-8ad9-57ec-93f1-b5b2d154d10b",
+      "name": "Telegram: pendientes",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1340,
+        120
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "cred-telegram",
+          "name": "Telegram Bot Captación"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1-l1Axsib6LDIm6TDv07FCAO13vpuQe_7240CvW3BPfk",
+          "mode": "id",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-l1Axsib6LDIm6TDv07FCAO13vpuQe_7240CvW3BPfk/edit",
+          "cachedResultName": "CRM Captación B2B · RedesiaNet"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Leads",
+          "mode": "name"
+        },
+        "options": {},
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "lead_id",
+              "lookupValue": "={{ $json.lead_id }}"
+            }
+          ]
+        }
+      },
+      "id": "6b1e22e4-e042-5bff-9bab-6d6afd7edf7d",
+      "name": "Buscar lead",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        900,
+        320
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "cred-google-sheets",
+          "name": "Google Sheets RedesiaNet"
+        }
+      },
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// ---- utilidades comunes (se incrustan en los nodos Code al compilar) ----\nfunction ahoraMadrid() {\n  return DateTime.now().setZone('Europe/Madrid').toFormat('yyyy-MM-dd HH:mm');\n}\n\nfunction texto(v) {\n  return v === undefined || v === null ? '' : String(v).trim();\n}\n\n// Escapa texto para mensajes de Telegram con parse_mode = HTML\nfunction escHtml(v) {\n  return texto(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n}\n\n// OJO: el sandbox de los nodos Code de n8n NO tiene la clase URL. Usamos regex.\nfunction partesUrl(url) {\n  const u = texto(url);\n  const m = (/^https?:\\/\\//i.test(u) ? u : 'http://' + u).match(/^(https?:)\\/\\/([^/?#:@\\s]+)(?::(\\d+))?([^?#\\s]*)/i);\n  if (!m || !/\\./.test(m[2])) return null;\n  const host = m[2].toLowerCase();\n  return { protocolo: m[1].toLowerCase(), host, origen: m[1].toLowerCase() + '//' + host + (m[3] ? ':' + m[3] : ''), ruta: m[4] || '/' };\n}\n\nfunction dominioDe(url) {\n  const p = partesUrl(url);\n  return p ? p.host.replace(/^www\\d?\\./, '') : '';\n}\n\n// Resuelve un href (absoluto, //host, /ruta o relativo) contra la URL base.\nfunction resolverUrl(href, base) {\n  const h = texto(href);\n  const b = partesUrl(base);\n  if (!h || !b) return '';\n  if (/^https?:\\/\\//i.test(h)) return h;\n  if (h.startsWith('//')) return b.protocolo + h;\n  let ruta = h.startsWith('/') ? h : b.ruta.replace(/[^/]*$/, '') + h;\n  const [camino, resto = ''] = ruta.split(/(?=[?#])/);\n  const segs = [];\n  for (const s of camino.split('/')) {\n    if (s === '..') segs.pop();\n    else if (s !== '.') segs.push(s);\n  }\n  ruta = segs.join('/');\n  return b.origen + (ruta.startsWith('/') ? '' : '/') + ruta + resto;\n}\n\n// ¿El dominio o el email está en la pestaña Bloqueados? (acepta emails y dominios)\n// Un dominio genérico (gmail.com, hotmail.com…) nunca bloquea a todos sus usuarios:\n// para esos solo cuenta el email exacto.\nconst DOMINIOS_GENERICOS = /^(gmail\\.com|googlemail\\.com|hotmail\\.(com|es)|outlook\\.(com|es)|live\\.(com|es)|yahoo\\.(com|es)|icloud\\.com|me\\.com|msn\\.com|telefonica\\.net|movistar\\.es|ono\\.com|terra\\.es|aol\\.com|protonmail\\.com|proton\\.me)$/i;\nfunction estaBloqueado(valor, bloqueados) {\n  const v = texto(valor).toLowerCase();\n  if (!v) return false;\n  const dom = v.includes('@') ? v.split('@').pop() : v;\n  return bloqueados.some((b) => b === v || (!DOMINIOS_GENERICOS.test(b) && (b === dom || dom.endsWith('.' + b))));\n}\n\n// Comprueba que la orden tiene sentido para el estado actual del lead\n// (evita envíos dobles si pulsas dos veces).\nconst o = $('Interpretar orden').first().json;\nconst filas = $input.all().map((i) => i.json || {});\nconst lead = filas.find((r) => texto(r.lead_id).toUpperCase() === o.lead_id);\n\nlet error = '';\nif (!lead) {\n  error = `No encuentro el lead ${o.lead_id} en el CRM.`;\n} else {\n  const nombre = `${texto(lead.empresa)} (${o.lead_id})`;\n  const estado = texto(lead.estado);\n  if (o.accion === 'enviar') {\n    const email = texto(lead.email);\n    if (estado !== 'pendiente_aprobacion') error = `${nombre} está en estado «${estado}»: no lo vuelvo a enviar.`;\n    else if (!email && !texto(lead.instagram) && !texto(lead.facebook)) error = `${nombre} no tiene email ni redes.`;\n    else if (email && !/^[^@\\s]+@[^@\\s]+\\.[a-z]{2,}$/i.test(email)) error = `El email de ${nombre} no parece válido: ${email}. Corrígelo en el CRM y repite /enviar.`;\n    else if (email && (!texto(lead.asunto) || !texto(lead.cuerpo_email))) error = `Falta asunto o cuerpo del email de ${nombre} en el CRM.`;\n  } else if (o.accion === 'rechazar') {\n    if (!['pendiente_aprobacion', 'dm_pendiente', 'error_ia', 'error_envio'].includes(estado)) error = `${nombre} está en estado «${estado}»: ya no se puede rechazar.`;\n  } else if (o.accion === 'dm_ok') {\n    if (texto(lead.dm_estado) !== 'pendiente') error = `El DM de ${nombre} no estaba pendiente (dm_estado: «${texto(lead.dm_estado) || 'vacío'}»).`;\n  }\n}\n\nconst { row_number, ...limpio } = lead || {};\nreturn [{ json: { ...o, ok: !error, error, lead: limpio } }];\n"
+      },
+      "id": "47a223dc-5004-5623-b6ec-5a309fa9a29f",
+      "name": "Validar orden",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "89b72300-6714-5c40-a885-0e270d340032",
+                    "leftValue": "={{ $json.ok }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "false",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "error"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "aa810128-9e74-546b-a430-26d2baf80cba",
+                    "leftValue": "={{ $json.accion }}",
+                    "rightValue": "rechazar",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "rechazar"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "149fc5f5-d11e-556c-b1dc-8a4737b74583",
+                    "leftValue": "={{ $json.accion }}",
+                    "rightValue": "dm_ok",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "dm_ok"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "3452d1fd-7f3a-5745-964c-c99463f686fe",
+                    "leftValue": "={{ $json.accion }}",
+                    "rightValue": "enviar",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "enviar"
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "59cb1ca6-98df-58e9-b83a-93bc86e6f0a6",
+      "name": "Según acción",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1340,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $('Config').first().json.telegram_chat_id }}",
+        "text": "={{ '⚠️ ' + $json.error }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML",
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "eeec5322-1d62-5c02-886e-03bde1d12432",
+      "name": "Telegram: aviso",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1580,
+        160
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "cred-telegram",
+          "name": "Telegram Bot Captación"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ---- utilidades comunes (se incrustan en los nodos Code al compilar) ----\nfunction ahoraMadrid() {\n  return DateTime.now().setZone('Europe/Madrid').toFormat('yyyy-MM-dd HH:mm');\n}\n\nfunction texto(v) {\n  return v === undefined || v === null ? '' : String(v).trim();\n}\n\n// Escapa texto para mensajes de Telegram con parse_mode = HTML\nfunction escHtml(v) {\n  return texto(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n}\n\n// OJO: el sandbox de los nodos Code de n8n NO tiene la clase URL. Usamos regex.\nfunction partesUrl(url) {\n  const u = texto(url);\n  const m = (/^https?:\\/\\//i.test(u) ? u : 'http://' + u).match(/^(https?:)\\/\\/([^/?#:@\\s]+)(?::(\\d+))?([^?#\\s]*)/i);\n  if (!m || !/\\./.test(m[2])) return null;\n  const host = m[2].toLowerCase();\n  return { protocolo: m[1].toLowerCase(), host, origen: m[1].toLowerCase() + '//' + host + (m[3] ? ':' + m[3] : ''), ruta: m[4] || '/' };\n}\n\nfunction dominioDe(url) {\n  const p = partesUrl(url);\n  return p ? p.host.replace(/^www\\d?\\./, '') : '';\n}\n\n// Resuelve un href (absoluto, //host, /ruta o relativo) contra la URL base.\nfunction resolverUrl(href, base) {\n  const h = texto(href);\n  const b = partesUrl(base);\n  if (!h || !b) return '';\n  if (/^https?:\\/\\//i.test(h)) return h;\n  if (h.startsWith('//')) return b.protocolo + h;\n  let ruta = h.startsWith('/') ? h : b.ruta.replace(/[^/]*$/, '') + h;\n  const [camino, resto = ''] = ruta.split(/(?=[?#])/);\n  const segs = [];\n  for (const s of camino.split('/')) {\n    if (s === '..') segs.pop();\n    else if (s !== '.') segs.push(s);\n  }\n  ruta = segs.join('/');\n  return b.origen + (ruta.startsWith('/') ? '' : '/') + ruta + resto;\n}\n\n// ¿El dominio o el email está en la pestaña Bloqueados? (acepta emails y dominios)\n// Un dominio genérico (gmail.com, hotmail.com…) nunca bloquea a todos sus usuarios:\n// para esos solo cuenta el email exacto.\nconst DOMINIOS_GENERICOS = /^(gmail\\.com|googlemail\\.com|hotmail\\.(com|es)|outlook\\.(com|es)|live\\.(com|es)|yahoo\\.(com|es)|icloud\\.com|me\\.com|msn\\.com|telefonica\\.net|movistar\\.es|ono\\.com|terra\\.es|aol\\.com|protonmail\\.com|proton\\.me)$/i;\nfunction estaBloqueado(valor, bloqueados) {\n  const v = texto(valor).toLowerCase();\n  if (!v) return false;\n  const dom = v.includes('@') ? v.split('@').pop() : v;\n  return bloqueados.some((b) => b === v || (!DOMINIOS_GENERICOS.test(b) && (b === dom || dom.endsWith('.' + b))));\n}\n\nconst lead = $json.lead;\nreturn [{\n  json: {\n    lead_id: lead.lead_id,\n    estado: 'rechazado',\n    fecha_decision: ahoraMadrid(),\n    dm_estado: texto(lead.dm_estado) === 'pendiente' ? 'descartado' : texto(lead.dm_estado),\n  },\n}];\n"
+      },
+      "id": "c197ae8c-1f1f-525a-a6ab-d07fa0066741",
+      "name": "Preparar rechazo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1580,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1-l1Axsib6LDIm6TDv07FCAO13vpuQe_7240CvW3BPfk",
+          "mode": "id",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-l1Axsib6LDIm6TDv07FCAO13vpuQe_7240CvW3BPfk/edit",
+          "cachedResultName": "CRM Captación B2B · RedesiaNet"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Leads",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "lead_id"
+          ],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "RAW",
+          "handlingExtraData": "ignoreIt"
+        }
+      },
+      "id": "6907cda2-2467-5e24-9eac-4852de46f470",
+      "name": "CRM: rechazado",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1800,
+        320
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "cred-google-sheets",
+          "name": "Google Sheets RedesiaNet"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $('Config').first().json.telegram_chat_id }}",
+        "text": "={{ '❌ Rechazado: ' + $('Validar orden').first().json.lead.empresa + ' (' + $('Validar orden').first().json.lead_id + ')' }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML",
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "7c1e10ce-3919-5ed0-8884-0189d7e6930a",
+      "name": "Telegram: rechazado",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2020,
+        320
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "cred-telegram",
+          "name": "Telegram Bot Captación"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ---- utilidades comunes (se incrustan en los nodos Code al compilar) ----\nfunction ahoraMadrid() {\n  return DateTime.now().setZone('Europe/Madrid').toFormat('yyyy-MM-dd HH:mm');\n}\n\nfunction texto(v) {\n  return v === undefined || v === null ? '' : String(v).trim();\n}\n\n// Escapa texto para mensajes de Telegram con parse_mode = HTML\nfunction escHtml(v) {\n  return texto(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n}\n\n// OJO: el sandbox de los nodos Code de n8n NO tiene la clase URL. Usamos regex.\nfunction partesUrl(url) {\n  const u = texto(url);\n  const m = (/^https?:\\/\\//i.test(u) ? u : 'http://' + u).match(/^(https?:)\\/\\/([^/?#:@\\s]+)(?::(\\d+))?([^?#\\s]*)/i);\n  if (!m || !/\\./.test(m[2])) return null;\n  const host = m[2].toLowerCase();\n  return { protocolo: m[1].toLowerCase(), host, origen: m[1].toLowerCase() + '//' + host + (m[3] ? ':' + m[3] : ''), ruta: m[4] || '/' };\n}\n\nfunction dominioDe(url) {\n  const p = partesUrl(url);\n  return p ? p.host.replace(/^www\\d?\\./, '') : '';\n}\n\n// Resuelve un href (absoluto, //host, /ruta o relativo) contra la URL base.\nfunction resolverUrl(href, base) {\n  const h = texto(href);\n  const b = partesUrl(base);\n  if (!h || !b) return '';\n  if (/^https?:\\/\\//i.test(h)) return h;\n  if (h.startsWith('//')) return b.protocolo + h;\n  let ruta = h.startsWith('/') ? h : b.ruta.replace(/[^/]*$/, '') + h;\n  const [camino, resto = ''] = ruta.split(/(?=[?#])/);\n  const segs = [];\n  for (const s of camino.split('/')) {\n    if (s === '..') segs.pop();\n    else if (s !== '.') segs.push(s);\n  }\n  ruta = segs.join('/');\n  return b.origen + (ruta.startsWith('/') ? '' : '/') + ruta + resto;\n}\n\n// ¿El dominio o el email está en la pestaña Bloqueados? (acepta emails y dominios)\n// Un dominio genérico (gmail.com, hotmail.com…) nunca bloquea a todos sus usuarios:\n// para esos solo cuenta el email exacto.\nconst DOMINIOS_GENERICOS = /^(gmail\\.com|googlemail\\.com|hotmail\\.(com|es)|outlook\\.(com|es)|live\\.(com|es)|yahoo\\.(com|es)|icloud\\.com|me\\.com|msn\\.com|telefonica\\.net|movistar\\.es|ono\\.com|terra\\.es|aol\\.com|protonmail\\.com|proton\\.me)$/i;\nfunction estaBloqueado(valor, bloqueados) {\n  const v = texto(valor).toLowerCase();\n  if (!v) return false;\n  const dom = v.includes('@') ? v.split('@').pop() : v;\n  return bloqueados.some((b) => b === v || (!DOMINIOS_GENERICOS.test(b) && (b === dom || dom.endsWith('.' + b))));\n}\n\nconst lead = $json.lead;\nconst ahora = ahoraMadrid();\nconst fila = { lead_id: lead.lead_id, dm_estado: 'enviado', fecha_dm: ahora };\nif (texto(lead.estado) === 'dm_pendiente') {\n  fila.estado = 'enviado';\n  fila.fecha_envio = ahora;\n}\nreturn [{ json: fila }];\n"
+      },
+      "id": "df555470-81ca-5aa5-9df6-d4e2fba7cea7",
+      "name": "Preparar DM enviado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1580,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1-l1Axsib6LDIm6TDv07FCAO13vpuQe_7240CvW3BPfk",
+          "mode": "id",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-l1Axsib6LDIm6TDv07FCAO13vpuQe_7240CvW3BPfk/edit",
+          "cachedResultName": "CRM Captación B2B · RedesiaNet"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Leads",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "lead_id"
+          ],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "RAW",
+          "handlingExtraData": "ignoreIt"
+        }
+      },
+      "id": "d76303f5-7242-5ca9-a763-1bdf11074378",
+      "name": "CRM: DM enviado",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1800,
+        480
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "cred-google-sheets",
+          "name": "Google Sheets RedesiaNet"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $('Config').first().json.telegram_chat_id }}",
+        "text": "={{ '✅ DM registrado: ' + $('Validar orden').first().json.lead.empresa }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML",
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "9cf80a36-db72-55f7-afdf-bb92400f254b",
+      "name": "Telegram: DM registrado",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2020,
+        480
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "cred-telegram",
+          "name": "Telegram Bot Captación"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "b6575e3e-b12d-5f90-9b51-4beffb819ff3",
+              "leftValue": "={{ $json.lead.email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "4fd9de13-3186-5e31-9e96-19858e5fce1e",
+      "name": "¿Tiene email?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1580,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $json.lead.email }}",
+        "subject": "={{ $json.lead.asunto }}",
+        "emailType": "text",
+        "message": "={{ $json.lead.cuerpo_email }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "={{ $('Config').first().json.nombre_remitente }}"
+        }
+      },
+      "id": "8c50b4b1-36c6-5916-be7f-9e7fb4a65e92",
+      "name": "Gmail: enviar email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1800,
+        640
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "cred-gmail",
+          "name": "Gmail Fabio"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ---- utilidades comunes (se incrustan en los nodos Code al compilar) ----\nfunction ahoraMadrid() {\n  return DateTime.now().setZone('Europe/Madrid').toFormat('yyyy-MM-dd HH:mm');\n}\n\nfunction texto(v) {\n  return v === undefined || v === null ? '' : String(v).trim();\n}\n\n// Escapa texto para mensajes de Telegram con parse_mode = HTML\nfunction escHtml(v) {\n  return texto(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n}\n\n// OJO: el sandbox de los nodos Code de n8n NO tiene la clase URL. Usamos regex.\nfunction partesUrl(url) {\n  const u = texto(url);\n  const m = (/^https?:\\/\\//i.test(u) ? u : 'http://' + u).match(/^(https?:)\\/\\/([^/?#:@\\s]+)(?::(\\d+))?([^?#\\s]*)/i);\n  if (!m || !/\\./.test(m[2])) return null;\n  const host = m[2].toLowerCase();\n  return { protocolo: m[1].toLowerCase(), host, origen: m[1].toLowerCase() + '//' + host + (m[3] ? ':' + m[3] : ''), ruta: m[4] || '/' };\n}\n\nfunction dominioDe(url) {\n  const p = partesUrl(url);\n  return p ? p.host.replace(/^www\\d?\\./, '') : '';\n}\n\n// Resuelve un href (absoluto, //host, /ruta o relativo) contra la URL base.\nfunction resolverUrl(href, base) {\n  const h = texto(href);\n  const b = partesUrl(base);\n  if (!h || !b) return '';\n  if (/^https?:\\/\\//i.test(h)) return h;\n  if (h.startsWith('//')) return b.protocolo + h;\n  let ruta = h.startsWith('/') ? h : b.ruta.replace(/[^/]*$/, '') + h;\n  const [camino, resto = ''] = ruta.split(/(?=[?#])/);\n  const segs = [];\n  for (const s of camino.split('/')) {\n    if (s === '..') segs.pop();\n    else if (s !== '.') segs.push(s);\n  }\n  ruta = segs.join('/');\n  return b.origen + (ruta.startsWith('/') ? '' : '/') + ruta + resto;\n}\n\n// ¿El dominio o el email está en la pestaña Bloqueados? (acepta emails y dominios)\n// Un dominio genérico (gmail.com, hotmail.com…) nunca bloquea a todos sus usuarios:\n// para esos solo cuenta el email exacto.\nconst DOMINIOS_GENERICOS = /^(gmail\\.com|googlemail\\.com|hotmail\\.(com|es)|outlook\\.(com|es)|live\\.(com|es)|yahoo\\.(com|es)|icloud\\.com|me\\.com|msn\\.com|telefonica\\.net|movistar\\.es|ono\\.com|terra\\.es|aol\\.com|protonmail\\.com|proton\\.me)$/i;\nfunction estaBloqueado(valor, bloqueados) {\n  const v = texto(valor).toLowerCase();\n  if (!v) return false;\n  const dom = v.includes('@') ? v.split('@').pop() : v;\n  return bloqueados.some((b) => b === v || (!DOMINIOS_GENERICOS.test(b) && (b === dom || dom.endsWith('.' + b))));\n}\n\n// Llega aquí tras enviar el email con Gmail, o directamente si el lead no\n// tiene email (solo DM). Prepara la actualización del CRM.\nconst o = $('Validar orden').first().json;\nconst lead = o.lead;\nconst g = $json || {};\nconst emailEnviado = Boolean(g.id && g.threadId);\nconst hayRedes = Boolean(texto(lead.instagram) || texto(lead.facebook));\nconst ahora = ahoraMadrid();\n\nreturn [{\n  json: {\n    lead_id: lead.lead_id,\n    estado: emailEnviado ? 'enviado' : 'dm_pendiente',\n    fecha_decision: ahora,\n    fecha_envio: emailEnviado ? ahora : '',\n    canal_enviado: emailEnviado ? (hayRedes ? 'email+dm' : 'email') : 'dm',\n    gmail_message_id: g.id || '',\n    gmail_thread_id: g.threadId || '',\n    dm_estado: hayRedes ? 'pendiente' : '',\n    // campos auxiliares (no son columnas del Sheet; se ignoran al guardar)\n    _email_enviado: emailEnviado,\n    _hay_redes: hayRedes,\n  },\n}];\n"
+      },
+      "id": "49aef0f9-10d2-5757-8c3c-c044d95b9915",
+      "name": "Resultado del envío",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2040,
+        760
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ---- utilidades comunes (se incrustan en los nodos Code al compilar) ----\nfunction ahoraMadrid() {\n  return DateTime.now().setZone('Europe/Madrid').toFormat('yyyy-MM-dd HH:mm');\n}\n\nfunction texto(v) {\n  return v === undefined || v === null ? '' : String(v).trim();\n}\n\n// Escapa texto para mensajes de Telegram con parse_mode = HTML\nfunction escHtml(v) {\n  return texto(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n}\n\n// OJO: el sandbox de los nodos Code de n8n NO tiene la clase URL. Usamos regex.\nfunction partesUrl(url) {\n  const u = texto(url);\n  const m = (/^https?:\\/\\//i.test(u) ? u : 'http://' + u).match(/^(https?:)\\/\\/([^/?#:@\\s]+)(?::(\\d+))?([^?#\\s]*)/i);\n  if (!m || !/\\./.test(m[2])) return null;\n  const host = m[2].toLowerCase();\n  return { protocolo: m[1].toLowerCase(), host, origen: m[1].toLowerCase() + '//' + host + (m[3] ? ':' + m[3] : ''), ruta: m[4] || '/' };\n}\n\nfunction dominioDe(url) {\n  const p = partesUrl(url);\n  return p ? p.host.replace(/^www\\d?\\./, '') : '';\n}\n\n// Resuelve un href (absoluto, //host, /ruta o relativo) contra la URL base.\nfunction resolverUrl(href, base) {\n  const h = texto(href);\n  const b = partesUrl(base);\n  if (!h || !b) return '';\n  if (/^https?:\\/\\//i.test(h)) return h;\n  if (h.startsWith('//')) return b.protocolo + h;\n  let ruta = h.startsWith('/') ? h : b.ruta.replace(/[^/]*$/, '') + h;\n  const [camino, resto = ''] = ruta.split(/(?=[?#])/);\n  const segs = [];\n  for (const s of camino.split('/')) {\n    if (s === '..') segs.pop();\n    else if (s !== '.') segs.push(s);\n  }\n  ruta = segs.join('/');\n  return b.origen + (ruta.startsWith('/') ? '' : '/') + ruta + resto;\n}\n\n// ¿El dominio o el email está en la pestaña Bloqueados? (acepta emails y dominios)\n// Un dominio genérico (gmail.com, hotmail.com…) nunca bloquea a todos sus usuarios:\n// para esos solo cuenta el email exacto.\nconst DOMINIOS_GENERICOS = /^(gmail\\.com|googlemail\\.com|hotmail\\.(com|es)|outlook\\.(com|es)|live\\.(com|es)|yahoo\\.(com|es)|icloud\\.com|me\\.com|msn\\.com|telefonica\\.net|movistar\\.es|ono\\.com|terra\\.es|aol\\.com|protonmail\\.com|proton\\.me)$/i;\nfunction estaBloqueado(valor, bloqueados) {\n  const v = texto(valor).toLowerCase();\n  if (!v) return false;\n  const dom = v.includes('@') ? v.split('@').pop() : v;\n  return bloqueados.some((b) => b === v || (!DOMINIOS_GENERICOS.test(b) && (b === dom || dom.endsWith('.' + b))));\n}\n\nconst lead = $('Validar orden').first().json.lead;\nconst e = $json.error;\nconst detalle = texto((e && (e.message || e.description)) || e || 'error desconocido').slice(0, 300);\nreturn [{\n  json: {\n    lead_id: lead.lead_id,\n    estado: 'error_envio',\n    fecha_decision: ahoraMadrid(),\n    motivo_descarte: 'Gmail: ' + detalle,\n    _texto: `⚠️ <b>No se pudo enviar el email</b> a ${escHtml(lead.empresa)} (<code>${escHtml(lead.lead_id)}</code>)\\n${escHtml(detalle)}\\n\\nCorrige el email en el CRM, cambia el estado a pendiente_aprobacion y repite /enviar ${escHtml(lead.lead_id)}`,\n  },\n}];\n"
+      },
+      "id": "8b6377b6-870e-5c78-b05d-9c7594d312d6",
+      "name": "Preparar error de envío",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2040,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1-l1Axsib6LDIm6TDv07FCAO13vpuQe_7240CvW3BPfk",
+          "mode": "id",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-l1Axsib6LDIm6TDv07FCAO13vpuQe_7240CvW3BPfk/edit",
+          "cachedResultName": "CRM Captación B2B · RedesiaNet"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Leads",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "lead_id"
+          ],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "RAW",
+          "handlingExtraData": "ignoreIt"
+        }
+      },
+      "id": "1e56afa9-289e-5b9a-9c29-b2ac203e48a9",
+      "name": "CRM: error de envío",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2260,
+        600
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "cred-google-sheets",
+          "name": "Google Sheets RedesiaNet"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $('Config').first().json.telegram_chat_id }}",
+        "text": "={{ $('Preparar error de envío').first().json._texto }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML",
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "e8c24e7d-d412-536b-a838-c580a6a4c418",
+      "name": "Telegram: error de envío",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2480,
+        600
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "cred-telegram",
+          "name": "Telegram Bot Captación"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1-l1Axsib6LDIm6TDv07FCAO13vpuQe_7240CvW3BPfk",
+          "mode": "id",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-l1Axsib6LDIm6TDv07FCAO13vpuQe_7240CvW3BPfk/edit",
+          "cachedResultName": "CRM Captación B2B · RedesiaNet"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Leads",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "lead_id"
+          ],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "RAW",
+          "handlingExtraData": "ignoreIt"
+        }
+      },
+      "id": "64e0946b-3a68-5c6b-becd-4e8c72d425c8",
+      "name": "CRM: enviado",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2260,
+        760
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "cred-google-sheets",
+          "name": "Google Sheets RedesiaNet"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $('Config').first().json.telegram_chat_id }}",
+        "text": "={{ ($('Resultado del envío').first().json._email_enviado ? '📤 Email enviado a ' + $('Validar orden').first().json.lead.empresa + ' (' + $('Validar orden').first().json.lead.email + ')' : '📭 ' + $('Validar orden').first().json.lead.empresa + ' no tiene email: te paso el DM.') }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML",
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "9a382af3-c055-5965-b985-78d2d041702d",
+      "name": "Telegram: confirmación",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2480,
+        700
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "cred-telegram",
+          "name": "Telegram Bot Captación"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "458f32da-e41b-586c-9db8-6516cd986914",
+              "leftValue": "={{ $('Resultado del envío').first().json._hay_redes }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "0bfa4b71-8465-578d-a906-a2752f17d28c",
+      "name": "¿Hay DM que preparar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2480,
+        880
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ---- utilidades comunes (se incrustan en los nodos Code al compilar) ----\nfunction ahoraMadrid() {\n  return DateTime.now().setZone('Europe/Madrid').toFormat('yyyy-MM-dd HH:mm');\n}\n\nfunction texto(v) {\n  return v === undefined || v === null ? '' : String(v).trim();\n}\n\n// Escapa texto para mensajes de Telegram con parse_mode = HTML\nfunction escHtml(v) {\n  return texto(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n}\n\n// OJO: el sandbox de los nodos Code de n8n NO tiene la clase URL. Usamos regex.\nfunction partesUrl(url) {\n  const u = texto(url);\n  const m = (/^https?:\\/\\//i.test(u) ? u : 'http://' + u).match(/^(https?:)\\/\\/([^/?#:@\\s]+)(?::(\\d+))?([^?#\\s]*)/i);\n  if (!m || !/\\./.test(m[2])) return null;\n  const host = m[2].toLowerCase();\n  return { protocolo: m[1].toLowerCase(), host, origen: m[1].toLowerCase() + '//' + host + (m[3] ? ':' + m[3] : ''), ruta: m[4] || '/' };\n}\n\nfunction dominioDe(url) {\n  const p = partesUrl(url);\n  return p ? p.host.replace(/^www\\d?\\./, '') : '';\n}\n\n// Resuelve un href (absoluto, //host, /ruta o relativo) contra la URL base.\nfunction resolverUrl(href, base) {\n  const h = texto(href);\n  const b = partesUrl(base);\n  if (!h || !b) return '';\n  if (/^https?:\\/\\//i.test(h)) return h;\n  if (h.startsWith('//')) return b.protocolo + h;\n  let ruta = h.startsWith('/') ? h : b.ruta.replace(/[^/]*$/, '') + h;\n  const [camino, resto = ''] = ruta.split(/(?=[?#])/);\n  const segs = [];\n  for (const s of camino.split('/')) {\n    if (s === '..') segs.pop();\n    else if (s !== '.') segs.push(s);\n  }\n  ruta = segs.join('/');\n  return b.origen + (ruta.startsWith('/') ? '' : '/') + ruta + resto;\n}\n\n// ¿El dominio o el email está en la pestaña Bloqueados? (acepta emails y dominios)\n// Un dominio genérico (gmail.com, hotmail.com…) nunca bloquea a todos sus usuarios:\n// para esos solo cuenta el email exacto.\nconst DOMINIOS_GENERICOS = /^(gmail\\.com|googlemail\\.com|hotmail\\.(com|es)|outlook\\.(com|es)|live\\.(com|es)|yahoo\\.(com|es)|icloud\\.com|me\\.com|msn\\.com|telefonica\\.net|movistar\\.es|ono\\.com|terra\\.es|aol\\.com|protonmail\\.com|proton\\.me)$/i;\nfunction estaBloqueado(valor, bloqueados) {\n  const v = texto(valor).toLowerCase();\n  if (!v) return false;\n  const dom = v.includes('@') ? v.split('@').pop() : v;\n  return bloqueados.some((b) => b === v || (!DOMINIOS_GENERICOS.test(b) && (b === dom || dom.endsWith('.' + b))));\n}\n\n// Meta no permite iniciar DMs en frío por API: te preparamos el mensaje\n// listo para copiar y los enlaces que abren el chat directamente.\nconst lead = $('Validar orden').first().json.lead;\nconst attr = (v) => escHtml(v).replace(/\"/g, '&quot;');\n\nfunction handleInstagram(url) {\n  const m = texto(url).match(/instagram\\.com\\/([A-Za-z0-9_.]+)/i);\n  return m ? m[1] : '';\n}\nfunction paginaFacebook(url) {\n  const m = texto(url).match(/facebook\\.com\\/([A-Za-z0-9.\\-]+)\\/?$/i);\n  return m ? m[1] : '';\n}\n\nconst enlaces = [];\nconst ig = handleInstagram(lead.instagram);\nif (ig) enlaces.push(`📸 <a href=\"https://ig.me/m/${attr(ig)}\">Abrir chat de Instagram (@${escHtml(ig)})</a>`);\nconst fb = paginaFacebook(lead.facebook);\nif (fb) enlaces.push(`📘 <a href=\"https://m.me/${attr(fb)}\">Abrir Messenger (${escHtml(fb)})</a>`);\nelse if (texto(lead.facebook)) enlaces.push(`📘 <a href=\"${attr(lead.facebook)}\">Abrir página de Facebook</a> (pulsa «Enviar mensaje»)`);\n\nconst t = [\n  `💬 <b>DM para ${escHtml(lead.empresa)}</b> · <code>${escHtml(lead.lead_id)}</code>`,\n  '',\n  'Mantén pulsado para copiar:',\n  `<pre>${escHtml(lead.mensaje_dm)}</pre>`,\n  ...enlaces,\n  '',\n  `Cuando lo hayas enviado, pulsa el botón o escribe /dm_ok ${escHtml(lead.lead_id)}`,\n].join('\\n');\n\nreturn [{ json: { lead_id: lead.lead_id, texto: t } }];\n"
+      },
+      "id": "8979f178-b513-58a9-9cee-59a1a9d4a340",
+      "name": "Preparar paquete DM",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2700,
+        880
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $('Config').first().json.telegram_chat_id }}",
+        "text": "={{ $json.texto }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML",
+          "disable_web_page_preview": true
+        },
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "✅ Ya envié el DM",
+                    "additionalFields": {
+                      "callback_data": "=dm_ok:{{ $json.lead_id }}"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "id": "6c20d41e-f88f-59c7-b9a9-4c4d4c7afd89",
+      "name": "Telegram: paquete DM",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2920,
+        880
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "cred-telegram",
+          "name": "Telegram Bot Captación"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Telegram: órdenes": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Interpretar orden",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Interpretar orden": {
+      "main": [
+        [
+          {
+            "node": "¿Es un botón?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Según orden",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Es un botón?": {
+      "main": [
+        [
+          {
+            "node": "Telegram: cerrar botón",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Según orden": {
+      "main": [
+        [
+          {
+            "node": "Mensaje de ayuda",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Leer CRM",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Buscar lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensaje de ayuda": {
+      "main": [
+        [
+          {
+            "node": "Telegram: ayuda",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer CRM": {
+      "main": [
+        [
+          {
+            "node": "Listar pendientes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Listar pendientes": {
+      "main": [
+        [
+          {
+            "node": "Telegram: pendientes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar lead": {
+      "main": [
+        [
+          {
+            "node": "Validar orden",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar orden": {
+      "main": [
+        [
+          {
+            "node": "Según acción",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Según acción": {
+      "main": [
+        [
+          {
+            "node": "Telegram: aviso",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Preparar rechazo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Preparar DM enviado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "¿Tiene email?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar rechazo": {
+      "main": [
+        [
+          {
+            "node": "CRM: rechazado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CRM: rechazado": {
+      "main": [
+        [
+          {
+            "node": "Telegram: rechazado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar DM enviado": {
+      "main": [
+        [
+          {
+            "node": "CRM: DM enviado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CRM: DM enviado": {
+      "main": [
+        [
+          {
+            "node": "Telegram: DM registrado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Tiene email?": {
+      "main": [
+        [
+          {
+            "node": "Gmail: enviar email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resultado del envío",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail: enviar email": {
+      "main": [
+        [
+          {
+            "node": "Resultado del envío",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Preparar error de envío",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar error de envío": {
+      "main": [
+        [
+          {
+            "node": "CRM: error de envío",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CRM: error de envío": {
+      "main": [
+        [
+          {
+            "node": "Telegram: error de envío",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resultado del envío": {
+      "main": [
+        [
+          {
+            "node": "CRM: enviado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CRM: enviado": {
+      "main": [
+        [
+          {
+            "node": "Telegram: confirmación",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "¿Hay DM que preparar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Hay DM que preparar?": {
+      "main": [
+        [
+          {
+            "node": "Preparar paquete DM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar paquete DM": {
+      "main": [
+        [
+          {
+            "node": "Telegram: paquete DM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Madrid",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "active": false,
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}
