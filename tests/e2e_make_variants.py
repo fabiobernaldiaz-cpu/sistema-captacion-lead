@@ -83,44 +83,42 @@ def gen():
     return wf
 
 
-def env(update, lead_row, gmail_fails=False):
+def env(filas, gmail_falla_para=''):
+    """Enviador: el disparador de Sheets se sustituye por las filas dadas."""
     wf = json.loads((REPO / 'n8n/workflow_enviador.json').read_text())
     nodes = [{'id': 'start', 'name': 'Inicio', 'type': 'n8n-nodes-base.manualTrigger', 'typeVersion': 1, 'position': [-200, 0], 'parameters': {}}]
     for n in wf['nodes']:
         name = n['name']
-        if name == 'Telegram: órdenes':
-            n = stub(n, f"return [{{json: {json.dumps(update)}}}];")
-        elif name in ('Buscar lead', 'Leer CRM'):
-            n = stub(n, f"return [{{json: {json.dumps(lead_row)}}}];")
+        if name == 'Sheet: estado cambiado':
+            n = stub(n, f"return {json.dumps([{'json': f} for f in filas])};")
         elif name == 'Gmail: enviar email':
-            if gmail_fails:
-                n = stub(n, "throw new Error('Invalid To header');")
-                n['onError'] = 'continueErrorOutput'
-            else:
-                n = stub(n, "if (!$json.lead.email || !$json.lead.cuerpo_email) throw new Error('faltan datos'); return {json: {id: 'm1', threadId: 't1', labelIds: ['SENT']}};", per_item=True)
+            js = (f"if ($json.lead.email.includes({json.dumps(gmail_falla_para or '@@nunca@@')})) throw new Error('Invalid To header');\n"
+                  "if (!$json.lead.asunto || !$json.lead.cuerpo_email) throw new Error('faltan datos');\n"
+                  "return {json: {id: 'm-' + $json.lead_id, threadId: 't-' + $json.lead_id, labelIds: ['SENT']}};")
+            n = stub(n, js, per_item=True)
+            n['onError'] = 'continueErrorOutput'
         elif n['type'] in ('n8n-nodes-base.googleSheets', 'n8n-nodes-base.telegram'):
             n = passthrough(n)
         nodes.append(n)
     wf['nodes'] = nodes
-    wf['connections']['Inicio'] = {'main': [[{'node': 'Telegram: órdenes', 'type': 'main', 'index': 0}]]}
+    wf['connections']['Inicio'] = {'main': [[{'node': 'Sheet: estado cambiado', 'type': 'main', 'index': 0}]]}
     return wf
 
 
-lead = {'row_number': 2, 'lead_id': 'K7Q2MX', 'estado': 'pendiente_aprobacion', 'empresa': 'Clínica Dental Sonrisas', 'email': 'info@clinicadentalsonrisas.es', 'instagram': 'https://www.instagram.com/dentalsonrisas_torrejon/', 'facebook': '', 'asunto': 'citas', 'cuerpo_email': 'Hola...', 'mensaje_dm': 'Hola, soy Fabio', 'dm_estado': ''}
-boton = lambda d: {'update_id': 1, 'callback_query': {'id': 'cb1', 'data': d, 'message': {'chat': {'id': 5246096132}}}}
-texto = lambda t: {'update_id': 1, 'message': {'chat': {'id': 5246096132}, 'text': t}}
+fila = {'row_number': 2, 'lead_id': 'K7Q2MX', 'estado': 'aprobado', 'empresa': 'Clínica Dental Sonrisas', 'email': 'info@clinicadentalsonrisas.es', 'instagram': 'https://www.instagram.com/dentalsonrisas_torrejon/', 'facebook': '', 'asunto': 'citas', 'cuerpo_email': 'Hola...', 'mensaje_dm': 'Hola, soy Fabio', 'dm_estado': ''}
 
 OUT.mkdir(parents=True, exist_ok=True)
 cases = {
     'gen': gen(),
-    'env_enviar': env(boton('enviar:K7Q2MX'), lead),
-    'env_enviar_sin_email': env(texto('/enviar K7Q2MX'), {**lead, 'email': ''}),
-    'env_gmail_falla': env(texto('/enviar K7Q2MX'), lead, gmail_fails=True),
-    'env_rechazar': env(texto('/rechazar k7q2mx'), lead),
-    'env_doble_envio': env(texto('/enviar K7Q2MX'), {**lead, 'estado': 'enviado'}),
-    'env_dm_ok': env(boton('dm_ok:K7Q2MX'), {**lead, 'estado': 'dm_pendiente', 'dm_estado': 'pendiente'}),
-    'env_pendientes': env(texto('/pendientes'), lead),
-    'env_ayuda': env(texto('hola'), lead),
+    # 3 aprobados a la vez + 1 fila que el propio workflow puso en "enviado" (se ignora)
+    'env_lote': env([
+        fila,
+        {**fila, 'row_number': 3, 'lead_id': 'DMSOLO', 'empresa': 'Reformas Henares', 'email': '', 'asunto': '', 'cuerpo_email': ''},
+        {**fila, 'row_number': 4, 'lead_id': 'MALEMA', 'empresa': 'Taller Mal', 'email': 'info@@x'},
+        {**fila, 'row_number': 5, 'lead_id': 'YAENVI', 'estado': 'enviado'},
+    ]),
+    'env_gmail_falla': env([{**fila, 'email': 'rebota@nadie.es'}], gmail_falla_para='rebota'),
+    'env_nada': env([{**fila, 'estado': 'enviado'}]),
 }
 for i, (k, w) in enumerate(cases.items()):
     w['name'] = 'E2E ' + k

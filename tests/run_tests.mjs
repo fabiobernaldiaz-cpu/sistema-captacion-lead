@@ -268,12 +268,12 @@ test('procesar respuesta IA: fila de CRM, firma única y estados', async () => {
   assert.ok(sin.cuerpo_email.endsWith('\n\nFabio Bernal | RedesiaNet | fabiobernaldiaz@gmail.com'));
 });
 
-test('mensajes de Telegram del generador: HTML válido y comandos', async () => {
+test('mensajes de Telegram del generador: HTML válido e instrucciones de aprobación', async () => {
   const fila = await procesar(respuestaClaude({ ...analisisOk, asunto: 'citas <24h> & más' }));
   const [m] = await run('generador', 'Preparar mensaje Telegram', [fila], { 'Procesar respuesta IA': [fila], Config: [cfgGen()] });
   assertTelegramHtml(m.texto);
-  assert.match(m.texto, /\/enviar K7Q2MX/);
-  assert.match(m.texto, /\/rechazar K7Q2MX/);
+  assert.match(m.texto, /fila <code>K7Q2MX<\/code>, pon <b>estado = aprobado<\/b>/);
+  assert.ok(!/\/enviar/.test(m.texto), 'ya no se aprueba con comandos de Telegram');
   assert.match(m.texto, /citas &lt;24h&gt; &amp; más/);
   assert.match(m.texto, /<blockquote>/);
 
@@ -304,84 +304,71 @@ test('fila sin canal y marca de búsquedas', async () => {
 // ---------------------------------------------------------------------------
 // ENVIADOR
 // ---------------------------------------------------------------------------
-const msg = (text, chat = 5246096132) => ({ update_id: 1, message: { message_id: 9, chat: { id: chat }, text } });
-const boton = (data, chat = 5246096132) => ({ update_id: 2, callback_query: { id: 'cbq1', data, message: { chat: { id: chat } } } });
-const orden = (u) => run('enviador', 'Interpretar orden', [{}], { Config: [cfgEnv()], 'Telegram: órdenes': [u] });
-
-test('interpretar órdenes de Telegram', async () => {
-  assert.deepEqual((await orden(msg('/enviar k7q2mx')))[0], { accion: 'enviar', lead_id: 'K7Q2MX', chat_id: '5246096132', callback_id: '', aviso: '' });
-  const b = (await orden(boton('rechazar:K7Q2MX')))[0];
-  assert.equal(b.accion, 'rechazar');
-  assert.equal(b.callback_id, 'cbq1');
-  assert.equal((await orden(msg('/dm_ok@RedesiaNetBot  AB23CD')))[0].accion, 'dm_ok');
-  assert.equal((await orden(boton('dm_ok:AB23CD')))[0].lead_id, 'AB23CD');
-  assert.equal((await orden(msg('/pendientes')))[0].accion, 'pendientes');
-  assert.equal((await orden(msg('hola qué tal')))[0].accion, 'ayuda');
-  const sinId = (await orden(msg('/enviar')))[0];
-  assert.equal(sinId.accion, 'ayuda');
-  assert.match(sinId.aviso, /Falta el ID/);
-  assert.deepEqual(await orden(msg('/enviar K7Q2MX', 999)), [], 'ignora otros chats');
-  assert.deepEqual(await orden(boton('enviar:K7Q2MX', 999)), []);
-});
-
-const leadCRM = {
-  row_number: 5, lead_id: 'K7Q2MX', estado: 'pendiente_aprobacion', empresa: 'Clínica Dental Sonrisas',
+// El disparador de Google Sheets entrega las filas cuyo "estado" cambió (valores sin formato).
+const filaSheet = {
+  row_number: 5, lead_id: 'K7Q2MX', estado: 'aprobado', empresa: 'Clínica Dental Sonrisas',
   email: 'info@clinicadentalsonrisas.es', instagram: 'https://www.instagram.com/dentalsonrisas_torrejon/', facebook: '',
-  asunto: 'citas fuera de horario', cuerpo_email: 'Hola...', mensaje_dm: 'Hola, soy Fabio <de RedesiaNet>', dm_estado: '',
+  asunto: 'citas fuera de horario', cuerpo_email: 'Hola...', mensaje_dm: 'Hola, soy Fabio <de RedesiaNet>',
+  dm_estado: '', rating: 4.7, num_resenas: 120,
 };
-const validar = (accion, filas) => run('enviador', 'Validar orden', filas, { 'Interpretar orden': [{ accion, lead_id: 'K7Q2MX', chat_id: '1', callback_id: '', aviso: '' }] });
+const aprobados = (filas) => run('enviador', 'Leads aprobados', [{}], { 'Sheet: estado cambiado': filas });
 
-test('validar orden según el estado del lead', async () => {
-  const ok = (await validar('enviar', [leadCRM]))[0];
-  assert.equal(ok.ok, true);
-  assert.equal(ok.lead.row_number, undefined);
-  assert.match((await validar('enviar', [{ ...leadCRM, estado: 'enviado' }]))[0].error, /no lo vuelvo a enviar/);
-  assert.match((await validar('enviar', [{}]))[0].error, /No encuentro/);
-  assert.match((await validar('enviar', [{ ...leadCRM, email: 'info@@x' }]))[0].error, /no parece válido/);
-  assert.equal((await validar('enviar', [{ ...leadCRM, email: '', asunto: '', cuerpo_email: '' }]))[0].ok, true, 'solo DM vale');
-  assert.equal((await validar('rechazar', [{ ...leadCRM, estado: 'dm_pendiente' }]))[0].ok, true);
-  assert.equal((await validar('rechazar', [{ ...leadCRM, estado: 'enviado' }]))[0].ok, false);
-  assert.equal((await validar('dm_ok', [{ ...leadCRM, dm_estado: 'pendiente' }]))[0].ok, true);
-  assert.equal((await validar('dm_ok', [leadCRM]))[0].ok, false);
+test('leads aprobados: solo "aprobado", sin duplicados y con validación', async () => {
+  const out = await aprobados([
+    filaSheet,
+    { ...filaSheet },                                         // duplicado (dos cambios de la misma fila)
+    { ...filaSheet, lead_id: 'ENV123', estado: 'enviado' },   // el propio workflow lo cambió: se ignora
+    { ...filaSheet, lead_id: 'PEN123', estado: 'pendiente_aprobacion' },
+    { ...filaSheet, lead_id: 'MAY123', estado: ' Aprobado ' }, // mayúsculas y espacios
+    { ...filaSheet, lead_id: 'MAL123', email: 'info@@x' },
+    { ...filaSheet, lead_id: 'SIN123', asunto: '' },
+    { ...filaSheet, lead_id: 'DMS123', email: '', asunto: '', cuerpo_email: '' }, // solo DM: vale
+    { ...filaSheet, lead_id: 'NAD123', email: '', instagram: '', facebook: '' },
+  ]);
+  assert.deepEqual(out.map((o) => [o.lead_id, o.ok]), [
+    ['K7Q2MX', true], ['MAY123', true], ['MAL123', false], ['SIN123', false], ['DMS123', true], ['NAD123', false],
+  ]);
+  assert.equal(out[0].lead.row_number, undefined);
+  assert.equal(out[0].lead.rating, '4.7', 'todo a texto');
+  assert.match(out[2].error, /no parece válido/);
+  assert.match(out[3].error, /falta el asunto/);
+  assert.match(out[5].error, /ni Instagram/);
+  assert.deepEqual(await aprobados([{ ...filaSheet, estado: 'enviado' }]), [], 'nada que hacer');
 });
 
-test('resultado del envío, rechazo, DM y paquete DM', async () => {
-  const v = (await validar('enviar', [leadCRM]))[0];
-  const [env] = await run('enviador', 'Resultado del envío', [{ id: 'm1', threadId: 't1', labelIds: ['SENT'] }], { 'Validar orden': [v] });
+test('resultado del envío, paquete DM y errores', async () => {
+  const [v] = await aprobados([filaSheet]);
+  const [env] = await run('enviador', 'Resultado del envío', [{ id: 'm1', threadId: 't1', labelIds: ['SENT'] }], { 'Leads aprobados': [v] });
   assert.deepEqual(
-    { estado: env.estado, canal: env.canal_enviado, t: env.gmail_thread_id, dm: env.dm_estado, e: env._email_enviado },
-    { estado: 'enviado', canal: 'email+dm', t: 't1', dm: 'pendiente', e: true },
+    { estado: env.estado, canal: env.canal_enviado, t: env.gmail_thread_id, dm: env.dm_estado, r: env._hay_redes },
+    { estado: 'enviado', canal: 'email+dm', t: 't1', dm: 'pendiente', r: true },
   );
-  const v2 = (await validar('enviar', [{ ...leadCRM, email: '' }]))[0];
-  const [sinEmail] = await run('enviador', 'Resultado del envío', [v2], { 'Validar orden': [v2] });
+  assertTelegramHtml(env._texto);
+  assert.match(env._texto, /Email enviado/);
+
+  const [v2] = await aprobados([{ ...filaSheet, email: '' }]);
+  const [sinEmail] = await run('enviador', 'Resultado del envío', [v2], { 'Leads aprobados': [v2] });
   assert.equal(sinEmail.estado, 'dm_pendiente');
   assert.equal(sinEmail.canal_enviado, 'dm');
+  assertTelegramHtml(sinEmail._texto);
 
-  const [pq] = await run('enviador', 'Preparar paquete DM', [env], { 'Validar orden': [v] });
+  const [pq] = await run('enviador', 'Preparar paquete DM', [env], { 'Leads aprobados': [v], Config: [cfgEnv()] });
   assertTelegramHtml(pq.texto);
   assert.match(pq.texto, /https:\/\/ig\.me\/m\/dentalsonrisas_torrejon/);
   assert.match(pq.texto, /<pre>Hola, soy Fabio &lt;de RedesiaNet&gt;<\/pre>/);
+  assert.match(pq.texto, /dm_estado = enviado/);
 
-  const [rech] = await run('enviador', 'Preparar rechazo', [{ lead: { ...leadCRM, dm_estado: 'pendiente' } }]);
-  assert.deepEqual(rech, { lead_id: 'K7Q2MX', estado: 'rechazado', fecha_decision: '2026-11-09 09:00', dm_estado: 'descartado' });
-  const [dm] = await run('enviador', 'Preparar DM enviado', [{ lead: { ...leadCRM, estado: 'dm_pendiente' } }]);
-  assert.equal(dm.estado, 'enviado');
-  assert.equal(dm.dm_estado, 'enviado');
-
-  const [er] = await run('enviador', 'Preparar error de envío', [{ error: { message: 'Invalid To header' } }], { 'Validar orden': [v] });
+  // error de Gmail (llega {error: 'mensaje'}) y error de validación (llega el item con lead)
+  const [er] = await run('enviador', 'Preparar error', [{ error: 'Invalid To header' }], { 'Leads aprobados': [v] });
   assert.equal(er.estado, 'error_envio');
+  assert.equal(er.motivo_descarte, 'Gmail: Invalid To header');
   assertTelegramHtml(er._texto);
-});
-
-test('ayuda y pendientes', async () => {
-  const [a] = await run('enviador', 'Mensaje de ayuda', [{}], { Config: [cfgEnv()], 'Interpretar orden': [{ aviso: 'Falta el ID del lead. Ejemplo: /enviar K7Q2MX' }] });
-  assertTelegramHtml(a.texto);
-  const [p] = await run('enviador', 'Listar pendientes', [
-    leadCRM, { ...leadCRM, lead_id: 'B', estado: 'enviado', dm_estado: 'pendiente', empresa: 'Taller & Co' }, {},
-  ], { Config: [cfgEnv()] });
-  assertTelegramHtml(p.texto);
-  assert.match(p.texto, /1 borradores pendientes/);
-  assert.match(p.texto, /1 DMs por enviar/);
+  const [er2] = await run('enviador', 'Preparar error', [{ ...v, error: 'Invalid To header' }], { 'Leads aprobados': [v] });
+  assert.equal(er2.motivo_descarte, 'Gmail: Invalid To header', 'error de Gmail que conserva el item original');
+  const [mal] = await aprobados([{ ...filaSheet, email: 'info@@x' }]);
+  const [ev] = await run('enviador', 'Preparar error', [mal], { 'Leads aprobados': [mal] });
+  assert.match(ev.motivo_descarte, /^No enviado: el email/);
+  assert.match(ev._texto, /estado = aprobado/);
 });
 
 // ---------------------------------------------------------------------------

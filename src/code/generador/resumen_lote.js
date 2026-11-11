@@ -8,7 +8,7 @@ const busquedas = $('Elegir búsquedas').all().map((i) => escHtml(i.json.consult
 
 const lineas = [
   '🤖 <b>Captación de hoy</b>',
-  `• ${cuenta('pendiente_aprobacion')} borradores para revisar (te llegan ahora)`,
+  `• ${cuenta('pendiente_aprobacion')} borradores para revisar (te llegan ahora; apruébalos en el CRM con estado = aprobado)`,
   `• ${cuenta('descartado_ia')} descartados por la IA`,
   `• ${sinCanal} sin email ni redes (guardados como sin_canal para llamar)`,
 ];

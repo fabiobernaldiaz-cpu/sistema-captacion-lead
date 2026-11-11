@@ -25,7 +25,7 @@ let cuerpo = r.email
   ? `✉️ <b>Asunto:</b> ${escHtml(r.asunto)}\n<blockquote>${escHtml(r.cuerpo_email)}</blockquote>\n`
   : '✉️ <i>No hay email: solo se puede contactar por DM.</i>\n';
 const dm = r.instagram || r.facebook ? `\n💬 <b>DM:</b> <i>${escHtml(r.mensaje_dm)}</i>\n` : '';
-const pie = `\n/enviar ${r.lead_id}   ·   /rechazar ${r.lead_id}\n✏️ ¿Retocar? Edita asunto/cuerpo en el <a href="${attr(cfg.sheet_url)}">CRM</a> y luego envía.`;
+const pie = `\n👉 Para enviarlo: en el <a href="${attr(cfg.sheet_url)}">CRM</a>, fila <code>${escHtml(r.lead_id)}</code>, pon <b>estado = aprobado</b> (o <b>rechazado</b> para descartarlo).\n✏️ Si quieres retocar el texto, edita asunto/cuerpo_email antes de aprobar.`;
 
 let t = cabecera + cuerpo + dm + pie;
 if (t.length > 4000) {

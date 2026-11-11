@@ -27,6 +27,7 @@ ANTHROPIC_VERSION = "2026-10-21"
 # Crea las credenciales con estos nombres exactos antes de importar.
 CRED = {
     "sheets": {"googleSheetsOAuth2Api": {"id": "cred-google-sheets", "name": "Google Sheets RedesiaNet"}},
+    "sheets_trigger": {"googleSheetsTriggerOAuth2Api": {"id": "cred-google-sheets-trigger", "name": "Google Sheets Trigger RedesiaNet"}},
     "gmail": {"gmailOAuth2": {"id": "cred-gmail", "name": "Gmail Fabio"}},
     "telegram": {"telegramApi": {"id": "cred-telegram", "name": "Telegram Bot Captación"}},
     "anthropic": {"httpHeaderAuth": {"id": "cred-anthropic", "name": "Anthropic API Key"}},
@@ -334,10 +335,7 @@ def build_generador():
     if_node(wf, "¿Pendiente de aprobación?", (4320, -100),
             cond("={{ $('Procesar respuesta IA').item.json.estado }}", "string", "equals", "pendiente_aprobacion"))
     code(wf, "Preparar mensaje Telegram", "generador/mensaje_telegram.js", (4560, -120), per_item=True)
-    telegram_send(wf, "Telegram: borrador", (4800, -120), buttons=[[
-        ("✅ Enviar", "=enviar:{{ $json.lead_id }}"),
-        ("❌ Rechazar", "=rechazar:{{ $json.lead_id }}"),
-    ]])
+    telegram_send(wf, "Telegram: borrador", (4800, -120))
     wf.link("Guardar en CRM", "¿Pendiente de aprobación?")
     wf.chain("¿Pendiente de aprobación?", "Preparar mensaje Telegram", "Telegram: borrador")
 
@@ -354,88 +352,40 @@ def build_generador():
 
 
 # =============================================================================
-# 2) ENVIADOR (órdenes de Telegram)
+# 2) ENVIADOR (aprobación desde el Google Sheet)
 # =============================================================================
 def build_enviador():
-    wf = WF("enviador", "RedesiaNet · 2 · Enviador (aprobación por Telegram)")
+    wf = WF("enviador", "RedesiaNet · 2 · Enviador (aprobación desde el Sheet)")
     wf.note("Nota", (
         "## Enviador\n"
-        "Escucha tu bot de Telegram. Solo obedece al chat de Fabio.\n\n"
-        "- **/enviar ID** o botón ✅ → envía el email con Gmail y, si hay Instagram/Facebook, te pasa el DM listo para copiar\n"
-        "- **/rechazar ID** o botón ❌\n- **/dm_ok ID** → marca el DM como enviado\n- **/pendientes**, **/ayuda**\n\n"
-        "Se envía lo que haya en el Sheet en ese momento: si retocas el email en el CRM, se manda la versión retocada."
-    ), (-40, -560), w=560, h=300, color=5)
+        "Vigila la columna **estado** de la pestaña Leads (cada minuto).\n\n"
+        "Cuando pones **estado = aprobado** en una fila: envía el email con Gmail, marca la fila como "
+        "*enviado* y te avisa por Telegram. Si la empresa tiene Instagram/Facebook, te manda el DM listo para copiar.\n\n"
+        "Se envía lo que haya en el Sheet en ese momento: si retocas asunto o cuerpo_email antes de aprobar, "
+        "se manda la versión retocada.\n\n"
+        "**Al importar:** abre el primer nodo, conecta la credencial y elige la pestaña **Leads** en *Sheet*."
+    ), (-40, -520), w=560, h=300, color=5)
 
-    wf.add("Telegram: órdenes", "n8n-nodes-base.telegramTrigger", 1.5,
-           {"updates": ["message", "callback_query"], "additionalFields": {"chatIds": TELEGRAM_CHAT_ID}},
-           (0, 0), webhookId=uid("enviador", "webhook"), credentials=CRED["telegram"])
+    wf.add("Sheet: estado cambiado", "n8n-nodes-base.googleSheetsTrigger", 1, {
+        "authentication": "triggerOAuth2",
+        "pollTimes": {"item": [{"mode": "everyMinute"}]},
+        "documentId": _doc(),
+        "sheetName": {"__rl": True, "value": "", "mode": "list"},
+        "event": "rowUpdate",
+        "includeInOutput": "new",
+        "options": {"columnsToWatch": ["estado"]},
+    }, (0, 0), credentials=CRED["sheets_trigger"])
     config(wf, (220, 0), {
         "telegram_chat_id": TELEGRAM_CHAT_ID,
         "sheet_url": SHEET_URL,
         "nombre_remitente": "Fabio Bernal",
     })
-    code(wf, "Interpretar orden", "enviador/interpretar_orden.js", (440, 0))
-    wf.chain("Telegram: órdenes", "Config", "Interpretar orden")
+    code(wf, "Leads aprobados", "enviador/leads_aprobados.js", (440, 0))
+    if_node(wf, "¿Se puede enviar?", (660, 0), cond("={{ $json.ok }}", "boolean", "true", single=True))
+    if_node(wf, "¿Tiene email?", (880, -100), cond("={{ $json.lead.email }}", "string", "notEmpty", single=True))
+    wf.chain("Sheet: estado cambiado", "Config", "Leads aprobados", "¿Se puede enviar?")
+    wf.link("¿Se puede enviar?", "¿Tiene email?", out=0)
 
-    if_node(wf, "¿Es un botón?", (660, -200), cond("={{ $json.callback_id }}", "string", "notEmpty", single=True))
-    wf.add("Telegram: cerrar botón", "n8n-nodes-base.telegram", 1.2, {
-        "resource": "callback", "operation": "answerQuery", "queryId": "={{ $json.callback_id }}",
-        "additionalFields": {"text": "Recibido ✅"},
-    }, (880, -220), credentials=CRED["telegram"], onError="continueRegularOutput")
-    wf.link("Interpretar orden", "¿Es un botón?")
-    wf.link("¿Es un botón?", "Telegram: cerrar botón", out=0)
-
-    switch_node(wf, "Según orden", (660, 100), [
-        ("ayuda", cond("={{ $json.accion }}", "string", "equals", "ayuda")),
-        ("pendientes", cond("={{ $json.accion }}", "string", "equals", "pendientes")),
-        ("lead", cond("={{ $json.accion }}", "string", "regex", "^(enviar|rechazar|dm_ok)$")),
-    ])
-    wf.link("Interpretar orden", "Según orden")
-
-    code(wf, "Mensaje de ayuda", "enviador/mensaje_ayuda.js", (900, -40))
-    telegram_send(wf, "Telegram: ayuda", (1120, -40))
-    wf.link("Según orden", "Mensaje de ayuda", out=0)
-    wf.link("Mensaje de ayuda", "Telegram: ayuda")
-
-    sheets_read(wf, "Leer CRM", "Leads", (900, 120))
-    code(wf, "Listar pendientes", "enviador/listar_pendientes.js", (1120, 120))
-    telegram_send(wf, "Telegram: pendientes", (1340, 120))
-    wf.link("Según orden", "Leer CRM", out=1)
-    wf.chain("Leer CRM", "Listar pendientes", "Telegram: pendientes")
-
-    sheets_read(wf, "Buscar lead", "Leads", (900, 320),
-                filters=[("lead_id", "={{ $json.lead_id }}")])
-    code(wf, "Validar orden", "enviador/validar_orden.js", (1120, 320))
-    wf.link("Según orden", "Buscar lead", out=2)
-    wf.link("Buscar lead", "Validar orden")
-
-    switch_node(wf, "Según acción", (1340, 320), [
-        ("error", cond("={{ $json.ok }}", "boolean", "false", single=True)),
-        ("rechazar", cond("={{ $json.accion }}", "string", "equals", "rechazar")),
-        ("dm_ok", cond("={{ $json.accion }}", "string", "equals", "dm_ok")),
-        ("enviar", cond("={{ $json.accion }}", "string", "equals", "enviar")),
-    ])
-    wf.link("Validar orden", "Según acción")
-
-    telegram_send(wf, "Telegram: aviso", (1580, 160), text="={{ '⚠️ ' + $json.error }}")
-    wf.link("Según acción", "Telegram: aviso", out=0)
-
-    code(wf, "Preparar rechazo", "enviador/fila_rechazo.js", (1580, 320))
-    sheets_write(wf, "CRM: rechazado", "Leads", (1800, 320), op="update", match=["lead_id"])
-    telegram_send(wf, "Telegram: rechazado", (2020, 320),
-                  text="={{ '❌ Rechazado: ' + $('Validar orden').first().json.lead.empresa + ' (' + $('Validar orden').first().json.lead_id + ')' }}")
-    wf.link("Según acción", "Preparar rechazo", out=1)
-    wf.chain("Preparar rechazo", "CRM: rechazado", "Telegram: rechazado")
-
-    code(wf, "Preparar DM enviado", "enviador/fila_dm_ok.js", (1580, 480))
-    sheets_write(wf, "CRM: DM enviado", "Leads", (1800, 480), op="update", match=["lead_id"])
-    telegram_send(wf, "Telegram: DM registrado", (2020, 480),
-                  text="={{ '✅ DM registrado: ' + $('Validar orden').first().json.lead.empresa }}")
-    wf.link("Según acción", "Preparar DM enviado", out=2)
-    wf.chain("Preparar DM enviado", "CRM: DM enviado", "Telegram: DM registrado")
-
-    if_node(wf, "¿Tiene email?", (1580, 700), cond("={{ $json.lead.email }}", "string", "notEmpty", single=True))
-    wf.link("Según acción", "¿Tiene email?", out=3)
     wf.add("Gmail: enviar email", "n8n-nodes-base.gmail", 2.1, {
         "resource": "message",
         "operation": "send",
@@ -444,36 +394,33 @@ def build_enviador():
         "emailType": "text",
         "message": "={{ $json.lead.cuerpo_email }}",
         "options": {"appendAttribution": False, "senderName": "={{ $('Config').first().json.nombre_remitente }}"},
-    }, (1800, 640), credentials=CRED["gmail"], onError="continueErrorOutput")
-    code(wf, "Resultado del envío", "enviador/resultado_envio.js", (2040, 760))
+    }, (1100, -160), credentials=CRED["gmail"], onError="continueErrorOutput")
+    code(wf, "Resultado del envío", "enviador/resultado_envio.js", (1340, -60), per_item=True)
     wf.link("¿Tiene email?", "Gmail: enviar email", out=0)
     wf.link("¿Tiene email?", "Resultado del envío", out=1)
     wf.link("Gmail: enviar email", "Resultado del envío", out=0)
 
-    code(wf, "Preparar error de envío", "enviador/fila_error_envio.js", (2040, 600))
-    sheets_write(wf, "CRM: error de envío", "Leads", (2260, 600), op="update", match=["lead_id"])
-    telegram_send(wf, "Telegram: error de envío", (2480, 600),
-                  text="={{ $('Preparar error de envío').first().json._texto }}")
-    wf.link("Gmail: enviar email", "Preparar error de envío", out=1)
-    wf.chain("Preparar error de envío", "CRM: error de envío", "Telegram: error de envío")
-
-    sheets_write(wf, "CRM: enviado", "Leads", (2260, 760), op="update", match=["lead_id"])
-    telegram_send(wf, "Telegram: confirmación", (2480, 700), text=(
-        "={{ ($('Resultado del envío').first().json._email_enviado"
-        " ? '📤 Email enviado a ' + $('Validar orden').first().json.lead.empresa + ' (' + $('Validar orden').first().json.lead.email + ')'"
-        " : '📭 ' + $('Validar orden').first().json.lead.empresa + ' no tiene email: te paso el DM.') }}"
-    ))
-    if_node(wf, "¿Hay DM que preparar?", (2480, 880),
-            cond("={{ $('Resultado del envío').first().json._hay_redes }}", "boolean", "true", single=True))
-    code(wf, "Preparar paquete DM", "enviador/paquete_dm.js", (2700, 880))
-    telegram_send(wf, "Telegram: paquete DM", (2920, 880), buttons=[[
-        ("✅ Ya envié el DM", "=dm_ok:{{ $json.lead_id }}"),
-    ]])
+    sheets_write(wf, "CRM: enviado", "Leads", (1560, -60), op="update", match=["lead_id"])
+    telegram_send(wf, "Telegram: confirmación", (1780, -160),
+                  text="={{ $('Resultado del envío').item.json._texto }}")
+    if_node(wf, "¿Hay DM que preparar?", (1780, 40),
+            cond("={{ $('Resultado del envío').item.json._hay_redes }}", "boolean", "true", single=True))
+    code(wf, "Preparar paquete DM", "enviador/paquete_dm.js", (2000, 40), per_item=True)
+    telegram_send(wf, "Telegram: paquete DM", (2220, 40))
     wf.link("Resultado del envío", "CRM: enviado")
     wf.link("CRM: enviado", "Telegram: confirmación")
     wf.link("CRM: enviado", "¿Hay DM que preparar?")
     wf.link("¿Hay DM que preparar?", "Preparar paquete DM", out=0)
     wf.link("Preparar paquete DM", "Telegram: paquete DM")
+
+    # Errores: datos incompletos (no se intenta enviar) o Gmail rechaza el envío
+    code(wf, "Preparar error", "enviador/fila_error_envio.js", (1340, 260), per_item=True)
+    sheets_write(wf, "CRM: error de envío", "Leads", (1560, 260), op="update", match=["lead_id"])
+    telegram_send(wf, "Telegram: error de envío", (1780, 260),
+                  text="={{ $('Preparar error').item.json._texto }}")
+    wf.link("¿Se puede enviar?", "Preparar error", out=1)
+    wf.link("Gmail: enviar email", "Preparar error", out=1)
+    wf.chain("Preparar error", "CRM: error de envío", "Telegram: error de envío")
     return wf
 
 

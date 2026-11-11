@@ -1,7 +1,8 @@
 // @include common/util.js
 // Meta no permite iniciar DMs en frío por API: te preparamos el mensaje
 // listo para copiar y los enlaces que abren el chat directamente.
-const lead = $('Validar orden').first().json.lead;
+const lead = $('Leads aprobados').item.json.lead;
+const cfg = $('Config').first().json;
 const attr = (v) => escHtml(v).replace(/"/g, '&quot;');
 
 function handleInstagram(url) {
@@ -27,7 +28,7 @@ const t = [
   `<pre>${escHtml(lead.mensaje_dm)}</pre>`,
   ...enlaces,
   '',
-  `Cuando lo hayas enviado, pulsa el botón o escribe /dm_ok ${escHtml(lead.lead_id)}`,
+  `Cuando lo hayas enviado, en el <a href="${attr(cfg.sheet_url)}">CRM</a> pon <b>dm_estado = enviado</b> en la fila <code>${escHtml(lead.lead_id)}</code>.`,
 ].join('\n');
 
-return [{ json: { lead_id: lead.lead_id, texto: t } }];
+return { json: { lead_id: lead.lead_id, texto: t } };

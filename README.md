@@ -1,6 +1,6 @@
 # Sistema de captación B2B · RedesiaNet
 
-Captación automática de pymes del Corredor del Henares (Arganda del Rey, Alcalá de Henares, Torrejón de Ardoz y Coslada) con **n8n cloud + Claude + Telegram + Gmail + Google Sheets**. Nada sale sin tu aprobación en Telegram.
+Captación automática de pymes del Corredor del Henares (Arganda del Rey, Alcalá de Henares, Torrejón de Ardoz y Coslada) con **n8n cloud + Claude + Telegram + Gmail + Google Sheets**. Nada sale sin tu aprobación: lees el borrador en Telegram y lo apruebas en el Sheet.
 
 👉 **Para ponerlo en marcha:** [`docs/PASOS_FABIO.md`](docs/PASOS_FABIO.md) (solo los pasos que necesitan tu clic, unos 25 minutos).
 
@@ -11,11 +11,12 @@ Captación automática de pymes del Corredor del Henares (Arganda del Rey, Alcal
 ┌──────────────────────── 1 · GENERADOR ───────────────────────┐   ┌──────────────┐
 │ Busquedas (Sheet) → Google Maps → filtra/deduplica →         │   │ resumen      │
 │ web (inicio + contacto + aviso legal) → emails, redes,       │──▶│ borrador     │
-│ señales → Claude: dolor + servicio + email + DM → CRM        │   │ [✅] [❌]     │
-└──────────────────────────────────────────────────────────────┘   └──────┬───────┘
-┌──────────────────────── 2 · ENVIADOR ────────────────────────┐          │
-│ /enviar · /rechazar · /dm_ok · /pendientes (solo tu chat) →  │◀─────────┘
-│ Gmail (texto plano, sin firma de n8n) + paquete DM → CRM     │
+│ señales → Claude: dolor + servicio + email + DM → CRM        │   │ (para leer)  │
+└──────────────────────────────────────────────────────────────┘   └──────────────┘
+                     Tú, en el Sheet: estado = aprobado
+┌───────────────────── 2 · ENVIADOR (cada minuto) ─────────────┐
+│ detecta filas aprobadas → Gmail (texto plano, sin firma de   │──▶ 📤 aviso + DM
+│ n8n) → CRM: enviado                                          │
 └──────────────────────────────────────────────────────────────┘
 ┌──────────────────── 3 · SEGUIMIENTO (15 min) ────────────────┐
 │ Respuestas en Gmail → cruce por hilo/remitente → Claude      │──▶ 🔥 aviso
@@ -28,7 +29,7 @@ Captación automática de pymes del Corredor del Henares (Arganda del Rey, Alcal
 | Ruta | Qué es |
 |---|---|
 | `n8n/workflow_generador.json` | **1 · Generador**: búsqueda, análisis con IA, redacción y envío del borrador a Telegram. No envía nada a las empresas. |
-| `n8n/workflow_enviador.json` | **2 · Enviador**: escucha tus órdenes de Telegram y envía con Gmail. |
+| `n8n/workflow_enviador.json` | **2 · Enviador**: vigila el Sheet y envía con Gmail los leads que marcas como `aprobado`. |
 | `n8n/workflow_respuestas.json` | **3 · Seguimiento**: registra y clasifica las respuestas, y gestiona las bajas. |
 | `docs/PASOS_FABIO.md` | Puesta en marcha (lo único que tienes que hacer tú). |
 | `sheets/build_sheet.py` · `.xlsx` | Plantilla del CRM (el Sheet ya está creado; esto sirve para recrearlo). |
@@ -56,21 +57,22 @@ Captación automática de pymes del Corredor del Henares (Arganda del Rey, Alcal
    - el asunto, el email de 4-5 líneas con llamada a la acción de 20 minutos, y el DM.
 
    La firma y la despedida las añade el sistema, así que siempre son exactamente `Fabio Bernal | RedesiaNet | fabiobernaldiaz@gmail.com`.
-6. **Guarda** cada lead en `Leads` y te manda a Telegram un resumen y cada borrador con botones ✅ / ❌.
+6. **Guarda** cada lead en `Leads` y te manda a Telegram un resumen y cada borrador para que lo leas.
 
-### 2 · Enviador (siempre activo)
+### 2 · Enviador (siempre activo, mira el Sheet cada minuto)
 
-- **✅ o `/enviar ID`:**
-  - Si hay email: lo envía desde tu Gmail en texto plano (mejor entregabilidad, parece escrito a mano) y sin el pie de n8n.
-  - Si hay Instagram/Facebook: te manda el DM listo para copiar y un enlace que abre el chat (`ig.me` / `m.me`).
-  - Si no hay email pero sí redes: solo DM (estado `dm_pendiente`).
-- **❌ o `/rechazar ID`:** lo marca como rechazado.
-- **`/dm_ok ID`** (o el botón *Ya envié el DM*): registra que mandaste el DM.
-- **`/pendientes`** y **`/ayuda`.**
-- **Seguridad:**
-  - Solo obedece a tu chat (5246096132), con un filtro en el trigger y otro en el código.
-  - No reenvía un lead que ya no está en `pendiente_aprobacion`, así que pulsar dos veces no manda dos emails.
-- **Se envía lo que haya en el Sheet en ese momento:** para retocar un email, edita la celda y luego pulsa ✅.
+Se dispara cuando cambia la columna `estado` de la pestaña `Leads` y solo actúa sobre las filas que ahora dicen **`aprobado`**:
+
+- **Si hay email:** lo envía desde tu Gmail en texto plano (mejor entregabilidad, parece escrito a mano) y sin el pie de n8n. La fila pasa a `enviado` y Telegram te lo confirma.
+- **Si hay Instagram/Facebook:** te manda a Telegram el DM listo para copiar y un enlace que abre el chat (`ig.me` / `m.me`). Cuando lo envías, pones `dm_estado` = `enviado`.
+- **Si no hay email pero sí redes:** solo DM (estado `dm_pendiente`).
+- **Si falta algo** (email mal escrito, sin asunto) **o Gmail lo rechaza:** la fila pasa a `error_envio` con el motivo, y te avisa. Corriges y vuelves a poner `aprobado`.
+- **No hay envíos dobles:** al enviar, la fila deja de estar en `aprobado`, así que nunca se procesa otra vez.
+- **Se envía lo que haya en el Sheet en ese momento:** para retocar un email, edita la celda y después aprueba.
+- Puedes aprobar varias filas a la vez.
+- Para descartar un lead, pon `estado` = `rechazado`. No hace falta ningún workflow.
+
+Telegram solo se usa para **enviar avisos**, así que puedes usar un bot que ya tengas (por ejemplo Ricky) sin que deje de funcionar para lo demás.
 
 ### 3 · Seguimiento de respuestas (cada 15 minutos)
 
@@ -87,9 +89,9 @@ Captación automática de pymes del Corredor del Henares (Arganda del Rey, Alcal
 | `Leads` | Una fila por empresa (40 columnas): datos, análisis IA, textos, fechas, canal, ids de Gmail, respuesta. **No renombres las cabeceras.** |
 | `Busquedas` | Qué se busca en Google Maps. Añade o desactiva filas libremente. |
 | `Bloqueados` | Emails o dominios que nunca se contactan. Un dominio genérico como `gmail.com` no bloquea a todos sus usuarios: pon el email completo. |
-| `Leyenda` | Estados y comandos. |
+| `Leyenda` | Estados y cómo aprobar. |
 
-Estados: `pendiente_aprobacion` → `enviado` / `dm_pendiente` / `rechazado` → `respondido` / `rebotado` / `baja`. También: `descartado_ia`, `sin_canal` (sin email ni redes, para llamar) y `error_ia` / `error_envio`.
+Estados: `pendiente_aprobacion` → (tú) `aprobado` / `rechazado` → `enviado` / `dm_pendiente` → `respondido` / `rebotado` / `baja`. También: `descartado_ia`, `sin_canal` (sin email ni redes, para llamar) y `error_ia` / `error_envio`.
 
 Los datos se escriben como texto literal, así que un teléfono `+34…` o un texto con `=` de una web no se convierten en fórmulas.
 
@@ -112,7 +114,7 @@ Por eso el sistema:
 - detecta el perfil en la web de la empresa;
 - redacta el DM con Claude;
 - al aprobar, te lo da listo para copiar, con un enlace que abre directamente el chat (`ig.me/m/usuario` o `m.me/página`);
-- deja un botón para registrarlo en el CRM.
+- lo registras poniendo `dm_estado` = `enviado` en el CRM.
 
 Unos 10 segundos por DM, sin riesgo para tus cuentas.
 
@@ -122,7 +124,7 @@ Unos 10 segundos por DM, sin riesgo para tus cuentas.
 - **Google Places:** unas 65 búsquedas al mes. Google da un cupo gratuito mensual; pon la alerta de presupuesto del paso 2.
 - **n8n:**
   - Generador: 1 ejecución por día laborable.
-  - Enviador: 1 ejecución por orden.
+  - Enviador: solo cuando cambia la columna `estado` (unas 2 ejecuciones por envío: tu aprobación y el cambio a `enviado`, que se ignora). Las comprobaciones de cada minuto sin cambios no cuentan como ejecuciones.
   - Seguimiento: solo cuando llegan respuestas.
 
 ## Límites y avisos
@@ -149,10 +151,10 @@ node --test tests/run_tests.mjs        # 14 grupos de pruebas de la lógica
 
 **Validación en un n8n 2.46 local** (la que se hizo antes de entregar):
 
-1. `tests/e2e_validate_params.cjs` pasa el validador de parámetros del propio n8n a los 75 nodos.
+1. `tests/e2e_validate_params.cjs` pasa el validador de parámetros del propio n8n a los 58 nodos. Solo avisa del campo *Sheet* del disparador del Enviador, que se elige a mano.
 2. `n8n import:workflow` con credenciales de prueba con los nombres de la guía comprueba que se enlazan solas.
 3. `tests/e2e_make_variants.py` crea copias en las que solo los servicios externos (Sheets, Maps, webs, Claude, Gmail y Telegram) se sustituyen por datos fijos. Se ejecutan con `n8n execute` y se revisan con `tests/e2e_dump_execution.cjs`.
 
-   Escenarios cubiertos: generación completa, envío por botón, envío sin email, fallo de Gmail, rechazo, doble envío, `/dm_ok`, `/pendientes`, ayuda y seguimiento de respuestas con baja.
+   Escenarios cubiertos: generación completa; varios leads aprobados a la vez (con email, solo DM, email inválido y una fila ya enviada que se ignora); fallo de Gmail; cambio sin aprobados; y seguimiento de respuestas con baja.
 
 **No se ha probado contra los servicios reales** (Google Places, Anthropic, Gmail y Telegram), porque requiere tus credenciales. Esa es la prueba del paso 5 de `docs/PASOS_FABIO.md`.
